@@ -189,6 +189,285 @@ body,
   margin: 0;
 }
 
+/* ── toolbar, forecast bar ──────────────────────────────── */
+
+.chart-toolbar,
+.forecast-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  padding: 4px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #d0d0d0;
+  white-space: nowrap;
+}
+
+.forecast-bar {
+  border-top: 1px solid #d0d0d0;
+  border-bottom: none;
+}
+
+.forecast-status {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-right: auto;
+  color: #444;
+  white-space: normal;
+}
+
+.chart-toolbar button,
+.forecast-bar button,
+.dialog-actions button {
+  font: inherit;
+  padding: 2px 10px;
+  border: 1px solid #b8c0c8;
+  background: #fff;
+  cursor: pointer;
+}
+
+.chart-toolbar button[aria-pressed='true'] {
+  background: #dbe8f7;
+  border-color: #1a73e8;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.primary {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #fff;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #fff3cd;
+  border: 1px solid #e0c060;
+  font-size: 11px;
+  color: #6a5200;
+}
+
+.badge.frozen,
+label.frozen {
+  color: #0d47a1;
+  font-weight: 600;
+}
+
+.chart-area.tool-zoom {
+  cursor: crosshair;
+}
+
+/* ── floating panels, menu ──────────────────────────────── */
+
+.floating-panel {
+  position: absolute;
+  top: 40px;
+  right: 440px;
+  z-index: 3;
+  max-height: calc(100% - 60px);
+  display: flex;
+  flex-direction: column;
+  min-width: 260px;
+  border: 1px solid #9aa4ae;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+}
+
+.floating-panel > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #eef1f4;
+  border-bottom: 1px solid #d0d0d0;
+}
+
+.floating-panel > header button {
+  margin-left: auto;
+  border: none;
+  background: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.floating-panel-body {
+  padding: 8px;
+  overflow: auto;
+}
+
+.floating-panel h4 {
+  margin: 8px 0 4px;
+}
+
+.floating-panel table {
+  border-collapse: collapse;
+}
+
+.floating-panel td,
+.floating-panel th {
+  padding: 2px 6px;
+  text-align: left;
+}
+
+.legend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  line-height: 1.8;
+}
+
+.legend-swatch {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.legend-line {
+  width: 22px;
+  height: 0;
+  border-top: 2px solid var(--c);
+}
+
+.legend-dash {
+  width: 22px;
+  height: 0;
+  border-top: 2px dashed var(--c);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.legend-square {
+  width: 9px;
+  height: 9px;
+  background: var(--c);
+}
+
+.write-pad,
+.message-viewer {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+.write-pad-canvas {
+  display: block;
+  border: 1px solid #c8c8c8;
+  background: #fffef6;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.message-viewer img {
+  display: block;
+  max-width: 600px;
+  border: 1px solid #e0e0e0;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.msm-window {
+  right: auto;
+  left: 80px;
+}
+
+.msm-body {
+  display: flex;
+  gap: 8px;
+}
+
+.msm-plot {
+  position: relative;
+}
+
+.msm-readout {
+  position: absolute;
+  left: 44px;
+  top: 0;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+.msm-table {
+  display: block;
+  max-height: 220px;
+  overflow: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.msm-table tr.focus {
+  background: #dbe8f7;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+
+.settings-grid label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-grid input[type='number'],
+.settings-grid input[type='text'] {
+  width: 80px;
+}
+
+.settings-grid .settings-check {
+  justify-content: flex-start;
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 4;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  min-width: 180px;
+  border: 1px solid #9aa4ae;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 5px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.context-menu button:hover,
+.context-menu button:focus {
+  background: #e8eef4;
+}
+
 /* ── diagnostics ────────────────────────────────────────── */
 
 .diagnostics {

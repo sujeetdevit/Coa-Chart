@@ -49,7 +49,12 @@ export interface MidSectionSample {
 /** Controller note written with the e-pen (EPEN). */
 export interface EpenMessage {
   id: string;
+  /** Chart time the note was written against (where the user right-clicked). */
   at: EpochMs;
-  /** Opaque handwriting payload; format depends on the pen integration. */
+  /** Station row it was written against, when the click was on a station. */
+  stationCode?: string;
+  sectionId?: number;
+  /** Handwriting as an image data URL (format depends on the pen integration). */
   payload: string;
+  savedAt: EpochMs;
 }

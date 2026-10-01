@@ -5,6 +5,7 @@ import {
   type ChartLocation,
   type ChartRemark,
   type CurrentChartModel,
+  type EpenMessage,
   type EpochMs,
   type TrainRemark,
   type UnusualOccurrence,
@@ -21,7 +22,7 @@ import {
   describeTrainRemarks,
   describeUnusual,
 } from './overlayDescriptions';
-import type { TooltipContent } from './trainDescriptions';
+import { formatIstDateTime, type TooltipContent } from './trainDescriptions';
 
 /** Something on the chart with a hover area and tooltip. Rects are in stage coordinates. */
 export interface OverlayHit {
@@ -83,6 +84,14 @@ export interface ChartRemarkText {
   remark: ChartRemark;
 }
 
+/** EPEN "MSG" label (manual §11.1.1). Clicking it shows the note. */
+export interface MessageMarker {
+  id: string;
+  x: number;
+  y: number;
+  message: EpenMessage;
+}
+
 export interface ColumnBounds {
   caution: Rect;
   unusual: Rect;
@@ -97,6 +106,7 @@ export interface OverlayScene {
   occupancy: OccupancyBox[];
   remarks: RemarkMarker[];
   chartRemarks: ChartRemarkText[];
+  messages: MessageMarker[];
   /** Small targets (icons, boxes, markers) — tested before trains. */
   topHits: OverlayHit[];
   /** Large areas (blocks) — tested after trains so trains crossing a block stay hoverable. */
@@ -107,6 +117,8 @@ const CAUTION_SLOT = 28;
 const UNUSUAL_SLOT = 12;
 const REMARK_SIZE = 11;
 const CHART_REMARK_LINE = 15;
+export const MSG_WIDTH = 30;
+export const MSG_HEIGHT = 14;
 
 /**
  * Places blocks, caution/unusual icons, line-occupancy boxes and remarks for the current
@@ -310,7 +322,40 @@ export function buildOverlayScene(
       });
     });
 
-  return { columns, blocks, cautions, unusual, occupancy, remarks, chartRemarks, topHits, bottomHits };
+  // ── EPEN messages: "MSG" at the time/station the note was written against ──
+  const messages: MessageMarker[] = [];
+  for (const message of model.epenMessages) {
+    const x = xOf(message.at);
+    const stationY =
+      message.stationCode !== undefined && message.sectionId !== undefined
+        ? yOf({ kind: 'station', sectionId: message.sectionId, stationCode: message.stationCode })
+        : undefined;
+    const y = stationY ?? plot.y + plot.height - 30;
+    if (x < plot.x || x > plotRight || !inPlotY(y)) continue;
+    const marker = { id: `msg:${message.id}`, x, y, message };
+    messages.push(marker);
+    topHits.push({
+      id: marker.id,
+      rect: { x: x - MSG_WIDTH / 2, y: y - MSG_HEIGHT / 2, width: MSG_WIDTH, height: MSG_HEIGHT },
+      tooltip: {
+        title: 'Message (EPEN)',
+        lines: [`Written for ${formatIstDateTime(message.at)}`, 'Click to view'],
+      },
+    });
+  }
+
+  return {
+    columns,
+    blocks,
+    cautions,
+    unusual,
+    occupancy,
+    remarks,
+    chartRemarks,
+    messages,
+    topHits,
+    bottomHits,
+  };
 }
 
 export function overlayAt(hits: OverlayHit[], x: number, y: number): OverlayHit | undefined {

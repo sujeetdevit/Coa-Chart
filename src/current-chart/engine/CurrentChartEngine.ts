@@ -61,6 +61,7 @@ export interface TrainPathPoint extends Point {
   kind: PathPointKind;
   eventIndex: number;
   direction?: Direction;
+  forecastField?: 'arrival' | 'departure';
 }
 
 export interface TrainGeometry {
@@ -221,6 +222,24 @@ export class CurrentChartEngine {
   /** Zoom about a plot-space anchor. Factors > 1 zoom in; pass 1 to keep an axis unchanged. */
   zoomAt(anchor: Point, factorX: number, factorY = 1): CurrentChartEngine {
     return this.withViewport(zoomViewport(this.viewport, factorX, factorY, anchor, this.bounds));
+  }
+
+  /**
+   * Manual "Zoom": show the selected plot-space rectangle across the whole plot (both axes),
+   * within the zoom limits. Tiny rectangles (an accidental click) are ignored.
+   */
+  zoomToRect(rect: Rect): CurrentChartEngine {
+    if (rect.width < 4 || rect.height < 4) return this;
+    const { plot } = this.bounds;
+    const start = this.xToTime(rect.x);
+    const minutes = (this.xToTime(rect.x + rect.width) - start) / MS_PER_MINUTE;
+    const topUnits = this.yToUnits(rect.y);
+    const pxPerUnit = this.viewport.pxPerUnit * (plot.height / rect.height);
+    return this.withViewport({
+      time: { start, pxPerMinute: plot.width / minutes },
+      pxPerUnit,
+      scrollY: topUnits * pxPerUnit,
+    });
   }
 
   /** Drag the content by (dx, dy) pixels. */

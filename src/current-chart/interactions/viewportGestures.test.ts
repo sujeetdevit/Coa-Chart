@@ -68,7 +68,7 @@ describe('viewportActionFor', () => {
   });
 
   it('drag pans', () => {
-    const next = engineOf(viewportActionFor({ type: 'drag', dx: 50, dy: 0 }, engine));
+    const next = engineOf(viewportActionFor({ type: 'drag', dx: 50, dy: 0, x: 300, y: 200 }, engine));
     expect(next.viewport.time.start).toBeLessThan(engine.viewport.time.start);
   });
 

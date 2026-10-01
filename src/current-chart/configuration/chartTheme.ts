@@ -150,6 +150,8 @@ export interface OverlayTheme {
   /** Manual: user (chart) remarks in red at the bottom of the chart. */
   chartRemark: string;
   chartRemarkSize: number;
+  /** EPEN "MSG" label. */
+  messageMarker: string;
 }
 
 const layout: ChartLayout = {
@@ -275,6 +277,7 @@ export const DEFAULT_CHART_THEME: ChartTheme = {
     remarkMarkerText: '#ffffff',
     chartRemark: '#d00000',
     chartRemarkSize: 11,
+    messageMarker: '#c2185b',
   },
   interaction: {
     hoverWidth: 5,

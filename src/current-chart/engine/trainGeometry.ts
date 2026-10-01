@@ -10,6 +10,8 @@ export interface TrainPathVertex {
   /** Index into `train.events` (or `train.forecast.points` for forecast vertices). */
   eventIndex: number;
   direction?: Direction;
+  /** For forecast vertices: which time of the forecast point this vertex shows. */
+  forecastField?: 'arrival' | 'departure';
 }
 
 /**
@@ -40,11 +42,14 @@ export function forecastPathVertices(train: Train): TrainPathVertex[] {
   const vertices: TrainPathVertex[] = [];
   train.forecast?.points.forEach((point, eventIndex) => {
     const id = stationId(point.sectionId, point.stationCode);
-    for (const time of [point.arrival, point.departure]) {
+    for (const [field, time] of [
+      ['arrival', point.arrival],
+      ['departure', point.departure],
+    ] as const) {
       if (time === undefined) continue;
       const last = vertices[vertices.length - 1];
       if (last?.time === time && last.stationId === id) continue;
-      vertices.push({ time, stationId: id, kind: 'forecast', eventIndex });
+      vertices.push({ time, stationId: id, kind: 'forecast', eventIndex, forecastField: field });
     }
   });
   return vertices;

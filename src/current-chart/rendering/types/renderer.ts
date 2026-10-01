@@ -11,8 +11,13 @@ export type ChartGesture =
       ctrlKey: boolean;
       shiftKey: boolean;
     }
-  | { type: 'drag'; dx: number; dy: number }
+  /** A press moved past the drag threshold; x/y is where the press started. */
+  | { type: 'dragStart'; x: number; y: number }
+  /** dx/dy since the previous drag event; x/y is the current pointer position. */
+  | { type: 'drag'; dx: number; dy: number; x: number; y: number }
+  | { type: 'dragEnd'; x: number; y: number }
   | { type: 'click'; x: number; y: number }
+  | { type: 'contextMenu'; x: number; y: number }
   | { type: 'doubleClick'; x: number; y: number }
   | { type: 'pointerMove'; x: number; y: number }
   | { type: 'pointerLeave' };

@@ -1,4 +1,4 @@
-import type { OverlayScene } from '../../application/overlayScene';
+import { MSG_HEIGHT, MSG_WIDTH, type OverlayScene } from '../../application/overlayScene';
 import { departmentKey, type ChartTheme } from '../../configuration/chartTheme';
 import type { CurrentChartEngine } from '../../engine';
 import type { Primitive, PrimitiveGroup } from '../types';
@@ -261,6 +261,34 @@ export function buildAnnotationGroups(
         baseline: 'middle',
         fill: o.remarkMarkerText,
         fontSize: 8,
+        fontFamily: theme.fontFamily,
+        bold: true,
+      },
+    );
+  }
+  for (const msg of scene.messages) {
+    items.push(
+      {
+        kind: 'rect',
+        id: `${msg.id}:box`,
+        x: msg.x - MSG_WIDTH / 2,
+        y: msg.y - MSG_HEIGHT / 2,
+        width: MSG_WIDTH,
+        height: MSG_HEIGHT,
+        fill: '#ffffff',
+        stroke: o.messageMarker,
+        strokeWidth: 1.5,
+      },
+      {
+        kind: 'text',
+        id: `${msg.id}:text`,
+        text: 'MSG',
+        x: msg.x,
+        y: msg.y,
+        align: 'center',
+        baseline: 'middle',
+        fill: o.messageMarker,
+        fontSize: 9,
         fontFamily: theme.fontFamily,
         bold: true,
       },

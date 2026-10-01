@@ -3,77 +3,135 @@ import {
   defaultDisplayOptions,
   type ChartDisplayOptions,
 } from '../../current-chart/application/displayOptions';
+import { withForecasts } from '../../current-chart/application/forecast/forecastDisplay';
+import { msmRequestFor, type MsmRequest } from '../../current-chart/application/msm';
 import { buildOverlayScene, overlayAt, type OverlayHit } from '../../current-chart/application/overlayScene';
-import { describeTrainHover } from '../../current-chart/application/trainDescriptions';
+import {
+  describeTrainHover,
+  formatIstDateTime,
+  trainTitle,
+} from '../../current-chart/application/trainDescriptions';
+import { isTrainVisible, NO_FILTERS, type TrainFilters } from '../../current-chart/application/trainFilters';
 import { buildTrainScene } from '../../current-chart/application/trainScene';
-import { initialTimeWindow, pannableTimeExtent } from '../../current-chart/application/timeWindow';
-import { DEFAULT_CHART_CONFIG } from '../../current-chart/configuration/chartConfig';
+import { DEFAULT_CHART_CONFIG, type ChartConfig } from '../../current-chart/configuration/chartConfig';
 import { DEFAULT_CHART_THEME } from '../../current-chart/configuration/chartTheme';
-import type { CurrentChartModel, TimeRange } from '../../current-chart/domain';
-import { computeDwellLanes, CurrentChartEngine, TrainHitIndex, type Size } from '../../current-chart/engine';
-import { sameHover, trainAt } from '../../current-chart/interactions/trainPointer';
+import type { CurrentChartModel, EpenMessage, Station } from '../../current-chart/domain';
+import { computeDwellLanes, TrainHitIndex, type Rect } from '../../current-chart/engine';
+import {
+  forecastPointAt,
+  rectBetween,
+  sameHover,
+  trainAt,
+} from '../../current-chart/interactions/trainPointer';
 import { viewportActionFor } from '../../current-chart/interactions/viewportGestures';
 import { buildBaseRenderModel } from '../../current-chart/rendering/build/buildBaseRenderModel';
-import {
-  buildInteractionLayer,
-  type ChartHover,
-} from '../../current-chart/rendering/build/buildInteractionLayer';
 import {
   buildAnnotationGroups,
   buildInfrastructureLayer,
 } from '../../current-chart/rendering/build/buildInfrastructureLayer';
+import {
+  buildInteractionLayer,
+  type ChartHover,
+} from '../../current-chart/rendering/build/buildInteractionLayer';
 import { buildMovementLayer } from '../../current-chart/rendering/build/buildMovementLayer';
 import { composeRenderModel } from '../../current-chart/rendering/build/composeRenderModel';
 import type { ChartGesture } from '../../current-chart/rendering/types';
 import { useBlinkPhase } from '../../hooks/useBlinkPhase';
-import { useElementSize } from '../../hooks/useElementSize';
+import { useChartEngine } from '../../hooks/useChartEngine';
+import { useForecastWorkflow } from '../../hooks/useForecastWorkflow';
+import { useFreezableModel } from '../../hooks/useFreezableModel';
 import { ChartCanvas } from './ChartCanvas';
+import { ChartContextMenu, type ContextMenuItem } from './ChartContextMenu';
 import { ChartHeader } from './ChartHeader';
+import type { ChartServices } from './chartServices';
+import { ChartToolbar, type ChartPanel, type ChartTool } from './ChartToolbar';
 import { ChartTooltip, type ChartTooltipHandle } from './ChartTooltip';
+import { ForecastBar } from './ForecastBar';
+import { HaltDialog } from './HaltDialog';
+import { LegendPanel, SummaryPanel } from './LegendPanel';
+import { MessageViewer } from './MessageViewer';
+import { MsmWindow } from './MsmWindow';
+import { SettingsDialog } from './SettingsDialog';
 import { TrainDetailsPanel } from './TrainDetailsPanel';
+import { WritePadDialog } from './WritePadDialog';
 
-const config = DEFAULT_CHART_CONFIG;
 const theme = DEFAULT_CHART_THEME;
 
 interface CurrentChartViewProps {
   model: CurrentChartModel;
+  services: ChartServices;
 }
 
-export function CurrentChartView({ model }: CurrentChartViewProps) {
+/** Where a right-click happened: the chart time and station row under it, and any train. */
+interface ContextTarget {
+  x: number;
+  y: number;
+  at: number;
+  station?: Station;
+  trainId?: string;
+}
+
+type DragMode =
+  | { kind: 'pan' }
+  | { kind: 'zoomBox'; start: { x: number; y: number } }
+  | { kind: 'forecast'; trainId: string; pointIndex: number; field: 'arrival' | 'departure' };
+
+export function CurrentChartView({ model: incoming, services }: CurrentChartViewProps) {
   const areaRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<ChartTooltipHandle>(null);
-  const size = useElementSize(areaRef);
 
-  const initialWindow = useMemo(() => initialTimeWindow(model.asOf, config), [model.asOf]);
-  const timeExtent = useMemo(() => pannableTimeExtent(model, initialWindow, config), [model, initialWindow]);
-  const lanes = useMemo(() => computeDwellLanes(model.trains, config.dwellLanes), [model]);
+  // ── settings, freeze, filters ──
+  const [config, setConfig] = useState<ChartConfig>(DEFAULT_CHART_CONFIG);
+  const freeze = useFreezableModel(incoming);
+  const baseModel = freeze.model;
+  const [options, setOptions] = useState<ChartDisplayOptions>(() =>
+    defaultDisplayOptions(DEFAULT_CHART_CONFIG),
+  );
+  const [filters, setFilters] = useState<TrainFilters>(NO_FILTERS);
+  const [tool, setTool] = useState<ChartTool>('pan');
+  const [msmMode, setMsmMode] = useState(false);
+  const [panel, setPanel] = useState<ChartPanel>();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // ── engine: recreated when the model changes, resized when the area changes ──
-  const [engineState, setEngineState] = useState<{ engine: CurrentChartEngine; model: CurrentChartModel }>();
-  let engine = engineState?.model === model ? engineState.engine : undefined;
-  if (size && size.width > 0 && size.height > 0) {
-    if (!engine) {
-      engine = createEngine(model, size, initialWindow, timeExtent);
-      setEngineState({ engine, model });
-    } else if (
-      engine.getChartBounds().stage.width !== size.width ||
-      engine.getChartBounds().stage.height !== size.height
-    ) {
-      engine = engine.resize(size);
-      setEngineState({ engine, model });
-    }
-  }
+  const visibleTrainIds = useMemo(
+    () => baseModel.trains.filter((t) => isTrainVisible(t, filters)).map((t) => t.id),
+    [baseModel, filters],
+  );
+  const forecast = useForecastWorkflow(services.forecast, baseModel, visibleTrainIds);
+  const [haltOpen, setHaltOpen] = useState(false);
 
-  // ── UI state ──
-  const [options, setOptions] = useState<ChartDisplayOptions>(() => defaultDisplayOptions(config));
+  // ── EPEN ──
+  const [savedMessages, setSavedMessages] = useState<EpenMessage[]>([]);
+  const [shownMessages, setShownMessages] = useState<EpenMessage[] | undefined>();
+  const [writePad, setWritePad] = useState<ContextTarget>();
+  const [viewing, setViewing] = useState<EpenMessage>();
+  const [contextMenu, setContextMenu] = useState<ContextTarget>();
+  const [msm, setMsm] = useState<MsmRequest>();
+
+  // ── the model drawn: frozen data + forecasts + EPEN messages ──
+  const model = useMemo(() => {
+    const messages = shownMessages ?? savedMessages;
+    const withF = withForecasts(baseModel, forecast.state.shown, baseModel.asOf, config.forecast);
+    return { ...withF, epenMessages: messages };
+  }, [baseModel, forecast.state.shown, config.forecast, shownMessages, savedMessages]);
+
+  const { engine, update, initialWindow } = useChartEngine(areaRef, baseModel, config, theme);
+
+  // ── interaction state ──
   const [hover, setHover] = useState<ChartHover>();
   const [overlayHover, setOverlayHover] = useState<OverlayHit>();
   const [selectedId, setSelectedId] = useState<string>();
+  const [selectionRect, setSelectionRect] = useState<Rect>();
 
-  // ── derived scenes, hit indexes and layers ──
+  // ── scenes, hit indexes, layers ──
+  const lanes = useMemo(
+    () => computeDwellLanes(baseModel.trains, config.dwellLanes),
+    [baseModel, config.dwellLanes],
+  );
   const scene = useMemo(
-    () => (engine ? buildTrainScene(engine, model, lanes, config) : undefined),
-    [engine, model, lanes],
+    () =>
+      engine ? buildTrainScene(engine, model, lanes, config, (t) => isTrainVisible(t, filters)) : undefined,
+    [engine, model, lanes, config, filters],
   );
   const overlays = useMemo(
     () => (engine ? buildOverlayScene(engine, model, theme, model.asOf) : undefined),
@@ -81,6 +139,19 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
   );
   const hitIndex = useMemo(
     () => (scene ? new TrainHitIndex(scene.items.map((i) => i.actual)) : undefined),
+    [scene],
+  );
+  const forecastIndex = useMemo(
+    () =>
+      scene
+        ? new TrainHitIndex(
+            scene.items.map((i) => ({
+              trainId: i.train.id,
+              // Only forecast vertices are draggable, not the actual vertex the forecast starts from.
+              points: i.forecast.points.map((p) => (p.kind === 'forecast' ? p : { ...p, x: -1e6, y: -1e6 })),
+            })),
+          )
+        : undefined,
     [scene],
   );
   const blinkOff = useBlinkPhase(scene?.items.some((i) => i.crewOverDuty) ?? false, config.crew);
@@ -99,45 +170,77 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
       engine && scene
         ? [...buildMovementLayer(scene, engine, options, config, theme, blinkOff), ...annotations]
         : [],
-    [engine, scene, options, blinkOff, annotations],
+    [engine, scene, options, config, blinkOff, annotations],
   );
   const interaction = useMemo(
     () =>
       engine && scene
-        ? buildInteractionLayer(scene, engine, hover, selectedId, theme, overlayHover?.rect)
+        ? buildInteractionLayer(scene, engine, theme, {
+            ...(hover ? { hover } : {}),
+            ...(selectedId ? { selectedTrainId: selectedId } : {}),
+            ...(overlayHover ? { overlayRect: overlayHover.rect } : {}),
+            ...(selectionRect ? { selectionRect } : {}),
+          })
         : [],
-    [engine, scene, hover, selectedId, overlayHover],
+    [engine, scene, hover, selectedId, overlayHover, selectionRect],
   );
   const renderModel = useMemo(
     () => (base ? composeRenderModel(base, { infrastructure, movement, interaction }) : undefined),
     [base, infrastructure, movement, interaction],
   );
 
-  // Latest values for the gesture handler, which is registered once.
-  const live = useRef({ engine, scene, overlays, hitIndex, hover, overlayHover });
-  useEffect(() => {
-    live.current = { engine, scene, overlays, hitIndex, hover, overlayHover };
+  // Latest values for gesture handling (the renderer's handler is registered once).
+  const live = useRef({
+    engine,
+    scene,
+    overlays,
+    hitIndex,
+    forecastIndex,
+    hover,
+    overlayHover,
+    tool,
+    msmMode,
+    forecast,
+    baseModel,
   });
+  useEffect(() => {
+    live.current = {
+      engine,
+      scene,
+      overlays,
+      hitIndex,
+      forecastIndex,
+      hover,
+      overlayHover,
+      tool,
+      msmMode,
+      forecast,
+      baseModel,
+    };
+  });
+  const drag = useRef<DragMode>({ kind: 'pan' });
 
-  const update = useCallback((change: (engine: CurrentChartEngine) => CurrentChartEngine) => {
-    setEngineState((prev) => (prev ? { model: prev.model, engine: change(prev.engine) } : prev));
-  }, []);
-
-  const pointerAt = useCallback((x: number, y: number): ChartHover | undefined => {
-    const { engine: e, hitIndex: index } = live.current;
-    return e && index ? trainAt(x, y, e, index) : undefined;
-  }, []);
-
-  const setOverlay = useCallback((hit: OverlayHit | undefined) => {
-    if (hit?.id !== live.current.overlayHover?.id) setOverlayHover(hit);
-  }, []);
-
+  // ── hover ──
   const showTrainHover = useCallback((next: ChartHover | undefined, x: number, y: number) => {
     if (!sameHover(next, live.current.hover)) setHover(next);
-    if (areaRef.current) areaRef.current.style.cursor = next ? 'pointer' : '';
     const item = next ? live.current.scene?.byId.get(next.trainId) : undefined;
+    if (areaRef.current)
+      areaRef.current.style.cursor =
+        next?.forecastPointIndex !== undefined ? 'ew-resize' : next ? 'pointer' : '';
     if (!next || !item) {
       tooltipRef.current?.hide();
+      return;
+    }
+    if (next.forecastPointIndex !== undefined) {
+      const p = item.forecast.points[next.forecastPointIndex];
+      tooltipRef.current?.show(
+        {
+          title: trainTitle(item.train),
+          lines: [`Manual forecast ${p ? formatIstDateTime(p.time) : ''}`, 'Drag to change'],
+        },
+        x,
+        y,
+      );
       return;
     }
     const point = next.pointIndex !== undefined ? item.actual.points[next.pointIndex] : undefined;
@@ -150,27 +253,39 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
     tooltipRef.current?.show(describeTrainHover(item.train, point, isFloating), x, y);
   }, []);
 
-  /**
-   * Hover priority: small overlay targets (icons, boxes, remarks), then trains, then large
-   * overlay areas (blocks), so trains running through a block stay hoverable.
-   */
+  const setOverlay = useCallback((hit: OverlayHit | undefined) => {
+    if (hit?.id !== live.current.overlayHover?.id) setOverlayHover(hit);
+  }, []);
+
+  const trainHoverAt = useCallback((x: number, y: number): ChartHover | undefined => {
+    const { engine: e, hitIndex: index, forecastIndex: fIndex, forecast: f } = live.current;
+    if (!e || !index) return undefined;
+    if (f.state.mode === 'manual' && fIndex) {
+      const point = forecastPointAt(x, y, e, fIndex);
+      if (point) return point;
+    }
+    return trainAt(x, y, e, index);
+  }, []);
+
+  /** Small overlay targets, then trains, then large overlay areas (blocks). */
   const showHover = useCallback(
     (x: number, y: number) => {
       const { overlays: o } = live.current;
       const top = o ? overlayAt(o.topHits, x, y) : undefined;
-      const train = top ? undefined : pointerAt(x, y);
+      const train = top ? undefined : trainHoverAt(x, y);
       const bottom = top || train || !o ? undefined : overlayAt(o.bottomHits, x, y);
       const overlay = top ?? bottom;
       setOverlay(overlay);
       if (overlay) {
         if (live.current.hover) setHover(undefined);
-        if (areaRef.current) areaRef.current.style.cursor = 'help';
+        if (areaRef.current)
+          areaRef.current.style.cursor = overlay.id.startsWith('msg:') ? 'pointer' : 'help';
         tooltipRef.current?.show(overlay.tooltip, x, y);
         return;
       }
       showTrainHover(train, x, y);
     },
-    [pointerAt, setOverlay, showTrainHover],
+    [trainHoverAt, setOverlay, showTrainHover],
   );
 
   const hideHover = useCallback(() => {
@@ -178,8 +293,32 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
     showTrainHover(undefined, 0, 0);
   }, [setOverlay, showTrainHover]);
 
+  // ── clicks ──
+  const onClick = useCallback((x: number, y: number) => {
+    const { overlays: o, engine: e, scene: s, msmMode: msmOn, baseModel: m } = live.current;
+    const top = o ? overlayAt(o.topHits, x, y) : undefined;
+    if (top?.id.startsWith('msg:')) {
+      setViewing(o?.messages.find((msg) => msg.id === top.id)?.message);
+      return;
+    }
+    const hit = e && live.current.hitIndex ? trainAt(x, y, e, live.current.hitIndex) : undefined;
+    if (msmOn && hit?.segmentIndex !== undefined) {
+      const item = s?.byId.get(hit.trainId);
+      const request = item
+        ? msmRequestFor(item.train, item.actual.points, hit.segmentIndex, m.board)
+        : undefined;
+      if (request) {
+        setMsm(request);
+        return;
+      }
+    }
+    setSelectedId(hit?.trainId);
+  }, []);
+
+  // ── gestures ──
   const onGesture = useCallback(
     (gesture: ChartGesture) => {
+      const { engine: e } = live.current;
       switch (gesture.type) {
         case 'pointerMove':
           showHover(gesture.x, gesture.y);
@@ -188,9 +327,82 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
           hideHover();
           return;
         case 'click':
-          setSelectedId(pointerAt(gesture.x, gesture.y)?.trainId);
+          onClick(gesture.x, gesture.y);
           return;
-        case 'drag':
+        case 'contextMenu': {
+          if (!e) return;
+          const { plot } = e.getChartBounds();
+          const station = e.yToStation(gesture.y - plot.y, 10);
+          const trainId = live.current.hitIndex
+            ? trainAt(gesture.x, gesture.y, e, live.current.hitIndex)?.trainId
+            : undefined;
+          hideHover();
+          setContextMenu({
+            x: gesture.x,
+            y: gesture.y,
+            at: e.xToTime(gesture.x - plot.x),
+            ...(station ? { station } : {}),
+            ...(trainId ? { trainId } : {}),
+          });
+          return;
+        }
+        case 'dragStart': {
+          hideHover();
+          const { tool: t, forecast: f, forecastIndex: fIndex, scene: s } = live.current;
+          if (t === 'zoom') {
+            drag.current = { kind: 'zoomBox', start: { x: gesture.x, y: gesture.y } };
+            return;
+          }
+          if (f.state.mode === 'manual' && e && fIndex) {
+            const hit = forecastPointAt(gesture.x, gesture.y, e, fIndex);
+            const point =
+              hit?.forecastPointIndex !== undefined
+                ? s?.byId.get(hit.trainId)?.forecast.points[hit.forecastPointIndex]
+                : undefined;
+            if (hit && point?.forecastField) {
+              drag.current = {
+                kind: 'forecast',
+                trainId: hit.trainId,
+                pointIndex: point.eventIndex,
+                field: point.forecastField,
+              };
+              return;
+            }
+          }
+          drag.current = { kind: 'pan' };
+          return;
+        }
+        case 'drag': {
+          const mode = drag.current;
+          if (mode.kind === 'zoomBox') {
+            setSelectionRect(rectBetween(mode.start, gesture));
+            return;
+          }
+          if (mode.kind === 'forecast' && e) {
+            const { plot } = e.getChartBounds();
+            live.current.forecast.actions.moveManual(
+              mode.trainId,
+              mode.pointIndex,
+              mode.field,
+              e.xToTime(gesture.x - plot.x),
+            );
+            return;
+          }
+          break;
+        }
+        case 'dragEnd': {
+          const mode = drag.current;
+          drag.current = { kind: 'pan' };
+          if (mode.kind === 'zoomBox') {
+            setSelectionRect(undefined);
+            const r = rectBetween(mode.start, gesture);
+            update((current) => {
+              const { plot } = current.getChartBounds();
+              return current.zoomToRect({ ...r, x: r.x - plot.x, y: r.y - plot.y });
+            });
+          }
+          return;
+        }
         case 'wheel':
           hideHover();
           break;
@@ -204,7 +416,7 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
         return current;
       });
     },
-    [update, initialWindow, pointerAt, showHover, hideHover],
+    [update, initialWindow, showHover, hideHover, onClick],
   );
 
   const zoom = useCallback(
@@ -217,15 +429,64 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
     [update],
   );
 
+  // ── context menu actions ──
+  const contextItems = (target: ContextTarget): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [
+      {
+        label: 'Write Pad',
+        onSelect: () => {
+          setWritePad(target);
+        },
+      },
+      shownMessages
+        ? {
+            label: 'Hide Messages',
+            onSelect: () => {
+              setShownMessages(undefined);
+            },
+          }
+        : {
+            label: 'Message Show',
+            onSelect: () => {
+              if (!engine) return;
+              void services.epen.list(engine.getVisibleTimeRange()).then(setShownMessages);
+            },
+          },
+    ];
+    if (target.trainId) {
+      const id = target.trainId;
+      items.push({
+        label: 'Forecast this train',
+        onSelect: () => {
+          forecast.actions.single(id);
+        },
+      });
+    }
+    return items;
+  };
+
+  const saveMessage = (target: ContextTarget, payload: string) => {
+    const message: EpenMessage = {
+      id: `${Date.now()}`,
+      at: target.at,
+      payload,
+      savedAt: Date.now(),
+      ...(target.station ? { stationCode: target.station.code, sectionId: target.station.sectionId } : {}),
+    };
+    void services.epen.save(message).then(() => {
+      setSavedMessages((prev) => [...prev, message]);
+      setShownMessages((prev) => (prev ? [...prev, message] : prev));
+    });
+  };
+
   const selectedTrain = selectedId ? model.trains.find((t) => t.id === selectedId) : undefined;
 
   return (
     <div className="chart-view">
       <ChartHeader
-        model={model}
+        model={baseModel}
         visible={engine?.getVisibleTimeRange()}
-        options={options}
-        onOptionsChange={setOptions}
+        frozen={freeze.frozen}
         onReset={() => {
           update((current) => current.fitWindow(initialWindow));
         }}
@@ -235,8 +496,26 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
         onZoomStations={(f) => {
           zoom(1, f);
         }}
+        onSettings={() => {
+          setSettingsOpen(true);
+        }}
       />
-      <div ref={areaRef} className="chart-area">
+      <ChartToolbar
+        options={options}
+        onOptionsChange={setOptions}
+        filters={filters}
+        onFiltersChange={setFilters}
+        tool={tool}
+        onToolChange={setTool}
+        msm={msmMode}
+        onMsmChange={setMsmMode}
+        frozen={freeze.frozen}
+        hasPending={freeze.hasPending}
+        onFrozenChange={freeze.setFrozen}
+        panel={panel}
+        onPanelChange={setPanel}
+      />
+      <div ref={areaRef} className={`chart-area ${tool === 'zoom' ? 'tool-zoom' : ''}`}>
         <ChartCanvas renderModel={renderModel} onGesture={onGesture} />
         <ChartTooltip ref={tooltipRef} />
         {selectedTrain && (
@@ -247,19 +526,100 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
             }}
           />
         )}
+        {panel === 'legend' && (
+          <LegendPanel
+            model={baseModel}
+            theme={theme}
+            onClose={() => {
+              setPanel(undefined);
+            }}
+          />
+        )}
+        {panel === 'summary' && (
+          <SummaryPanel
+            model={baseModel}
+            onClose={() => {
+              setPanel(undefined);
+            }}
+          />
+        )}
+        {msm && (
+          <MsmWindow
+            request={msm}
+            provider={services.msm}
+            theme={theme}
+            onClose={() => {
+              setMsm(undefined);
+            }}
+          />
+        )}
+        {contextMenu && (
+          <ChartContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={contextItems(contextMenu)}
+            onClose={() => {
+              setContextMenu(undefined);
+            }}
+          />
+        )}
+        {writePad && (
+          <WritePadDialog
+            context={`${formatIstDateTime(writePad.at)}${writePad.station ? ` · ${writePad.station.code}` : ''}`}
+            onSave={(payload) => {
+              saveMessage(writePad, payload);
+            }}
+            onClose={() => {
+              setWritePad(undefined);
+            }}
+          />
+        )}
+        {viewing && (
+          <MessageViewer
+            message={viewing}
+            onClose={() => {
+              setViewing(undefined);
+            }}
+          />
+        )}
+        {haltOpen && (
+          <HaltDialog
+            trains={baseModel.trains.filter((t) => visibleTrainIds.includes(t.id))}
+            board={baseModel.board}
+            halts={forecast.state.halts}
+            onRun={(halts) => {
+              forecast.actions.full(halts);
+            }}
+            onClose={() => {
+              setHaltOpen(false);
+            }}
+          />
+        )}
+        {settingsOpen && (
+          <SettingsDialog
+            config={config}
+            onApply={setConfig}
+            onClose={() => {
+              setSettingsOpen(false);
+            }}
+          />
+        )}
       </div>
+      <ForecastBar
+        state={forecast.state}
+        onOption={forecast.actions.setOption}
+        onBasic={forecast.actions.basic}
+        onFull={() => {
+          if (forecast.state.haltOption) setHaltOpen(true);
+          else forecast.actions.full();
+        }}
+        onManual={forecast.actions.convertToManual}
+        onConfirm={forecast.actions.confirmManual}
+        onReset={forecast.actions.reset}
+        onWrong={() => {
+          forecast.actions.reportWrong(baseModel.asOf);
+        }}
+      />
     </div>
   );
-}
-
-function createEngine(model: CurrentChartModel, stage: Size, window: TimeRange, timeExtent: TimeRange) {
-  return CurrentChartEngine.create({
-    board: model.board,
-    stage,
-    margins: theme.margins,
-    window,
-    timeExtent,
-    now: model.asOf,
-    config,
-  });
 }

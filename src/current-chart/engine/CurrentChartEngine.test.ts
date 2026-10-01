@@ -139,6 +139,17 @@ describe('CurrentChartEngine — zoom and pan', () => {
     );
   });
 
+  it('zooms to a selected rectangle on both axes', () => {
+    const r = { x: 110, y: 50, width: 220, height: 100 };
+    const zoomed = engine.zoomToRect(r);
+    expect(zoomed.getVisibleTimeRange().start).toBeCloseTo(engine.xToTime(110), 3);
+    expect(zoomed.getVisibleTimeRange().end).toBeCloseTo(engine.xToTime(330), 3);
+    expect(zoomed.viewport.pxPerUnit).toBeCloseTo(engine.viewport.pxPerUnit * 4, 9);
+    // The rectangle's top edge becomes the plot's top edge.
+    expect(zoomed.yToStation(0)?.id).toBe(engine.yToStation(50)?.id);
+    expect(engine.zoomToRect({ x: 10, y: 10, width: 2, height: 50 })).toBe(engine); // accidental click
+  });
+
   it('fits a new window', () => {
     const window = { start: min(-60), end: min(0) };
     expect(engine.fitWindow(window).getVisibleTimeRange()).toEqual(window);

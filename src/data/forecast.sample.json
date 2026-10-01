@@ -1,0 +1,1190 @@
+{
+ "note": "SAMPLE forecast for UI development only. Not produced by the COA forecast algorithm: trains are projected using median observed running times from the supplied snapshot.",
+ "generatedFor": "21-09-26 00:25:00",
+ "trains": [
+  {
+   "trainId": "AGC HSX AGRA190926163",
+   "points": [
+    {
+     "station": "SMK",
+     "section": 20,
+     "arrival": "21-09-26 00:00:53",
+     "departure": "21-09-26 00:00:53"
+    },
+    {
+     "station": "DWNA",
+     "section": 20,
+     "arrival": "21-09-26 00:12:24",
+     "departure": "21-09-26 00:12:24"
+    },
+    {
+     "station": "PNP",
+     "section": 20,
+     "arrival": "21-09-26 00:24:16",
+     "departure": "21-09-26 00:24:16"
+    },
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 00:29:41",
+     "departure": "21-09-26 00:29:41"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 00:34:41",
+     "departure": "21-09-26 00:34:41"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 00:38:41",
+     "departure": "21-09-26 00:38:41"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 00:45:52",
+     "departure": "21-09-26 00:45:52"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 00:50:51",
+     "departure": "21-09-26 00:50:51"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 00:53:35",
+     "departure": "21-09-26 00:53:35"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 00:55:48",
+     "departure": "21-09-26 00:55:48"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 01:00:18",
+     "departure": "21-09-26 01:00:18"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 01:08:08",
+     "departure": "21-09-26 01:08:08"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 01:13:52",
+     "departure": "21-09-26 01:13:52"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 01:16:51",
+     "departure": "21-09-26 01:16:51"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 01:19:51",
+     "departure": "21-09-26 01:19:51"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:23:32",
+     "departure": "21-09-26 01:23:32"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 01:29:50",
+     "departure": "21-09-26 01:29:50"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 01:48:09",
+     "departure": "21-09-26 01:48:09"
+    }
+   ]
+  },
+  {
+   "trainId": "AII JAT AII 190926108",
+   "points": [
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 00:01:22",
+     "departure": "21-09-26 00:01:22"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 00:08:33",
+     "departure": "21-09-26 00:08:33"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 00:13:32",
+     "departure": "21-09-26 00:13:32"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 00:16:16",
+     "departure": "21-09-26 00:16:16"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 00:18:29",
+     "departure": "21-09-26 00:18:29"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 00:22:59",
+     "departure": "21-09-26 00:22:59"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 00:30:49",
+     "departure": "21-09-26 00:30:49"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 00:36:33",
+     "departure": "21-09-26 00:36:33"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 00:39:32",
+     "departure": "21-09-26 00:39:32"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 00:42:32",
+     "departure": "21-09-26 00:42:32"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 00:46:13",
+     "departure": "21-09-26 00:46:13"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 00:52:31",
+     "departure": "21-09-26 00:52:31"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 01:10:50",
+     "departure": "21-09-26 01:10:50"
+    }
+   ]
+  },
+  {
+   "trainId": "DEE JAT DLI 190926794",
+   "points": [
+    {
+     "station": "PNP",
+     "section": 20,
+     "arrival": "21-09-26 00:02:41",
+     "departure": "21-09-26 00:02:41"
+    },
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 00:08:06",
+     "departure": "21-09-26 00:08:06"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 00:13:06",
+     "departure": "21-09-26 00:13:06"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 00:17:06",
+     "departure": "21-09-26 00:17:06"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 00:24:17",
+     "departure": "21-09-26 00:24:17"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 00:29:16",
+     "departure": "21-09-26 00:29:16"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 00:32:00",
+     "departure": "21-09-26 00:32:00"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 00:34:14",
+     "departure": "21-09-26 00:34:14"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 00:38:44",
+     "departure": "21-09-26 00:38:44"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 00:46:34",
+     "departure": "21-09-26 00:46:34"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 00:52:18",
+     "departure": "21-09-26 00:52:18"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 00:55:17",
+     "departure": "21-09-26 00:55:17"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 00:58:17",
+     "departure": "21-09-26 00:58:17"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:01:57",
+     "departure": "21-09-26 01:01:57"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 01:08:15",
+     "departure": "21-09-26 01:08:15"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 01:26:35",
+     "departure": "21-09-26 01:26:35"
+    }
+   ]
+  },
+  {
+   "trainId": "DLI KRTPDLI 190926938",
+   "points": [
+    {
+     "station": "SLKN",
+     "section": 20,
+     "arrival": "21-09-26 00:06:00",
+     "departure": "21-09-26 00:06:00"
+    },
+    {
+     "station": "RUG",
+     "section": 20,
+     "arrival": "21-09-26 00:08:00",
+     "departure": "21-09-26 00:08:00"
+    },
+    {
+     "station": "GNU",
+     "section": 20,
+     "arrival": "21-09-26 00:12:26",
+     "departure": "21-09-26 00:12:26"
+    },
+    {
+     "station": "BDMJ",
+     "section": 20,
+     "arrival": "21-09-26 00:19:28",
+     "departure": "21-09-26 00:19:28"
+    },
+    {
+     "station": "SMK",
+     "section": 20,
+     "arrival": "21-09-26 00:26:51",
+     "departure": "21-09-26 00:26:51"
+    },
+    {
+     "station": "DWNA",
+     "section": 20,
+     "arrival": "21-09-26 00:38:22",
+     "departure": "21-09-26 00:38:22"
+    },
+    {
+     "station": "PNP",
+     "section": 20,
+     "arrival": "21-09-26 00:50:14",
+     "departure": "21-09-26 00:50:14"
+    },
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 00:55:39",
+     "departure": "21-09-26 00:55:39"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 01:00:39",
+     "departure": "21-09-26 01:00:39"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 01:04:39",
+     "departure": "21-09-26 01:04:39"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 01:11:50",
+     "departure": "21-09-26 01:11:50"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 01:16:49",
+     "departure": "21-09-26 01:16:49"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 01:19:33",
+     "departure": "21-09-26 01:19:33"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 01:21:46",
+     "departure": "21-09-26 01:21:46"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 01:26:16",
+     "departure": "21-09-26 01:26:16"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 01:34:06",
+     "departure": "21-09-26 01:34:06"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 01:39:50",
+     "departure": "21-09-26 01:39:50"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 01:42:49",
+     "departure": "21-09-26 01:42:49"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 01:45:49",
+     "departure": "21-09-26 01:45:49"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:49:30",
+     "departure": "21-09-26 01:49:30"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 01:55:48",
+     "departure": "21-09-26 01:55:48"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 02:14:07",
+     "departure": "21-09-26 02:14:07"
+    }
+   ]
+  },
+  {
+   "trainId": "HSQ CNB FZR 190926223",
+   "points": [
+    {
+     "station": "BHD",
+     "section": 20,
+     "arrival": "20-09-26 23:59:19",
+     "departure": "20-09-26 23:59:19"
+    },
+    {
+     "station": "ANDI",
+     "section": 20,
+     "arrival": "21-09-26 00:04:46",
+     "departure": "21-09-26 00:04:46"
+    },
+    {
+     "station": "SZM",
+     "section": 20,
+     "arrival": "21-09-26 00:13:46",
+     "departure": "21-09-26 00:13:46"
+    }
+   ]
+  },
+  {
+   "trainId": "HWH KLK HWH 180926212",
+   "points": [
+    {
+     "station": "RDDE",
+     "section": 20,
+     "arrival": "21-09-26 00:02:36",
+     "departure": "21-09-26 00:02:36"
+    },
+    {
+     "station": "SNP",
+     "section": 20,
+     "arrival": "21-09-26 00:10:19",
+     "departure": "21-09-26 00:10:19"
+    },
+    {
+     "station": "SLKN",
+     "section": 20,
+     "arrival": "21-09-26 00:16:19",
+     "departure": "21-09-26 00:16:19"
+    },
+    {
+     "station": "RUG",
+     "section": 20,
+     "arrival": "21-09-26 00:18:19",
+     "departure": "21-09-26 00:18:19"
+    },
+    {
+     "station": "GNU",
+     "section": 20,
+     "arrival": "21-09-26 00:22:45",
+     "departure": "21-09-26 00:22:45"
+    },
+    {
+     "station": "BDMJ",
+     "section": 20,
+     "arrival": "21-09-26 00:29:47",
+     "departure": "21-09-26 00:29:47"
+    },
+    {
+     "station": "SMK",
+     "section": 20,
+     "arrival": "21-09-26 00:37:10",
+     "departure": "21-09-26 00:37:10"
+    },
+    {
+     "station": "DWNA",
+     "section": 20,
+     "arrival": "21-09-26 00:48:41",
+     "departure": "21-09-26 00:48:41"
+    },
+    {
+     "station": "PNP",
+     "section": 20,
+     "arrival": "21-09-26 01:00:33",
+     "departure": "21-09-26 01:00:33"
+    },
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 01:05:58",
+     "departure": "21-09-26 01:05:58"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 01:10:58",
+     "departure": "21-09-26 01:10:58"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 01:14:58",
+     "departure": "21-09-26 01:14:58"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 01:22:09",
+     "departure": "21-09-26 01:22:09"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 01:27:08",
+     "departure": "21-09-26 01:27:08"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 01:29:52",
+     "departure": "21-09-26 01:29:52"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 01:32:05",
+     "departure": "21-09-26 01:32:05"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 01:36:35",
+     "departure": "21-09-26 01:36:35"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 01:44:25",
+     "departure": "21-09-26 01:44:25"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 01:50:09",
+     "departure": "21-09-26 01:50:09"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 01:53:08",
+     "departure": "21-09-26 01:53:08"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 01:56:08",
+     "departure": "21-09-26 01:56:08"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:59:49",
+     "departure": "21-09-26 01:59:49"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 02:06:07",
+     "departure": "21-09-26 02:06:07"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 02:24:26",
+     "departure": "21-09-26 02:24:26"
+    }
+   ]
+  },
+  {
+   "trainId": "KKDEUMB DLI 1909261303",
+   "points": [
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "20-09-26 23:58:59",
+     "departure": "20-09-26 23:58:59"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 00:01:59",
+     "departure": "21-09-26 00:01:59"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 00:05:39",
+     "departure": "21-09-26 00:05:39"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 00:11:57",
+     "departure": "21-09-26 00:11:57"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 00:30:17",
+     "departure": "21-09-26 00:30:17"
+    }
+   ]
+  },
+  {
+   "trainId": "PCWDDWLPDLI 200926562",
+   "points": [
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 00:30:25",
+     "departure": "21-09-26 00:30:25"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 00:35:25",
+     "departure": "21-09-26 00:35:25"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 00:39:25",
+     "departure": "21-09-26 00:39:25"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 00:46:36",
+     "departure": "21-09-26 00:46:36"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 00:51:35",
+     "departure": "21-09-26 00:51:35"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 00:54:19",
+     "departure": "21-09-26 00:54:19"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 00:56:32",
+     "departure": "21-09-26 00:56:32"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 01:01:02",
+     "departure": "21-09-26 01:01:02"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 01:08:52",
+     "departure": "21-09-26 01:08:52"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 01:14:36",
+     "departure": "21-09-26 01:14:36"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 01:17:35",
+     "departure": "21-09-26 01:17:35"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 01:20:35",
+     "departure": "21-09-26 01:20:35"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:24:16",
+     "departure": "21-09-26 01:24:16"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 01:30:34",
+     "departure": "21-09-26 01:30:34"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 01:48:53",
+     "departure": "21-09-26 01:48:53"
+    }
+   ]
+  },
+  {
+   "trainId": "PLPCMDCCUMB 20092646",
+   "points": [
+    {
+     "station": "DWNA",
+     "section": 20,
+     "arrival": "20-09-26 22:45:10",
+     "departure": "20-09-26 22:45:10"
+    },
+    {
+     "station": "SMK",
+     "section": 20,
+     "arrival": "20-09-26 22:51:43",
+     "departure": "20-09-26 22:51:43"
+    },
+    {
+     "station": "BDMJ",
+     "section": 20,
+     "arrival": "20-09-26 22:58:30",
+     "departure": "20-09-26 22:58:30"
+    },
+    {
+     "station": "GNU",
+     "section": 20,
+     "arrival": "20-09-26 23:04:04",
+     "departure": "20-09-26 23:04:04"
+    },
+    {
+     "station": "RUG",
+     "section": 20,
+     "arrival": "20-09-26 23:07:14",
+     "departure": "20-09-26 23:07:14"
+    },
+    {
+     "station": "SLKN",
+     "section": 20,
+     "arrival": "20-09-26 23:09:26",
+     "departure": "20-09-26 23:09:26"
+    },
+    {
+     "station": "SNP",
+     "section": 20,
+     "arrival": "20-09-26 23:16:23",
+     "departure": "20-09-26 23:16:23"
+    },
+    {
+     "station": "RDDE",
+     "section": 20,
+     "arrival": "20-09-26 23:24:39",
+     "departure": "20-09-26 23:24:39"
+    },
+    {
+     "station": "NUR",
+     "section": 20,
+     "arrival": "20-09-26 23:29:45",
+     "departure": "20-09-26 23:29:45"
+    },
+    {
+     "station": "HUK",
+     "section": 20,
+     "arrival": "20-09-26 23:34:16",
+     "departure": "20-09-26 23:34:16"
+    },
+    {
+     "station": "BHD",
+     "section": 20,
+     "arrival": "20-09-26 23:38:34",
+     "departure": "20-09-26 23:38:34"
+    },
+    {
+     "station": "ANDI",
+     "section": 20,
+     "arrival": "20-09-26 23:44:01",
+     "departure": "20-09-26 23:44:01"
+    },
+    {
+     "station": "SZM",
+     "section": 20,
+     "arrival": "20-09-26 23:53:01",
+     "departure": "20-09-26 23:53:01"
+    }
+   ]
+  },
+  {
+   "trainId": "PNP UMB DLI 1909261301",
+   "points": [
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 00:19:28",
+     "departure": "21-09-26 00:19:28"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 00:26:39",
+     "departure": "21-09-26 00:26:39"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 00:31:38",
+     "departure": "21-09-26 00:31:38"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 00:34:22",
+     "departure": "21-09-26 00:34:22"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 00:36:35",
+     "departure": "21-09-26 00:36:35"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 00:41:05",
+     "departure": "21-09-26 00:41:05"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 00:48:55",
+     "departure": "21-09-26 00:48:55"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 00:54:39",
+     "departure": "21-09-26 00:54:39"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 00:57:38",
+     "departure": "21-09-26 00:57:38"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 01:00:38",
+     "departure": "21-09-26 01:00:38"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:04:19",
+     "departure": "21-09-26 01:04:19"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 01:10:37",
+     "departure": "21-09-26 01:10:37"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 01:28:56",
+     "departure": "21-09-26 01:28:56"
+    }
+   ]
+  },
+  {
+   "trainId": "RUG DLI DLI 200926555",
+   "points": [
+    {
+     "station": "ANDI",
+     "section": 20,
+     "arrival": "20-09-26 23:56:40",
+     "departure": "20-09-26 23:56:40"
+    },
+    {
+     "station": "SZM",
+     "section": 20,
+     "arrival": "21-09-26 00:05:40",
+     "departure": "21-09-26 00:05:40"
+    }
+   ]
+  },
+  {
+   "trainId": "SBP JAT SBP 180926118",
+   "points": [
+    {
+     "station": "DWNA",
+     "section": 20,
+     "arrival": "21-09-26 00:06:31",
+     "departure": "21-09-26 00:06:31"
+    },
+    {
+     "station": "PNP",
+     "section": 20,
+     "arrival": "21-09-26 00:18:22",
+     "departure": "21-09-26 00:18:22"
+    },
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 00:23:47",
+     "departure": "21-09-26 00:23:47"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 00:28:47",
+     "departure": "21-09-26 00:28:47"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 00:32:47",
+     "departure": "21-09-26 00:32:47"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 00:39:58",
+     "departure": "21-09-26 00:39:58"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 00:44:57",
+     "departure": "21-09-26 00:44:57"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 00:47:41",
+     "departure": "21-09-26 00:47:41"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 00:49:55",
+     "departure": "21-09-26 00:49:55"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 00:54:25",
+     "departure": "21-09-26 00:54:25"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 01:02:15",
+     "departure": "21-09-26 01:02:15"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 01:07:59",
+     "departure": "21-09-26 01:07:59"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 01:10:58",
+     "departure": "21-09-26 01:10:58"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 01:13:58",
+     "departure": "21-09-26 01:13:58"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 01:17:38",
+     "departure": "21-09-26 01:17:38"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 01:23:56",
+     "departure": "21-09-26 01:23:56"
+    },
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 01:42:16",
+     "departure": "21-09-26 01:42:16"
+    }
+   ]
+  },
+  {
+   "trainId": "SFG SVDKPRYJ190926454",
+   "points": [
+    {
+     "station": "UMB",
+     "section": 20,
+     "arrival": "21-09-26 00:09:19",
+     "departure": "21-09-26 00:09:19"
+    }
+   ]
+  },
+  {
+   "trainId": "SNP CDG DLI 2109266",
+   "points": [
+    {
+     "station": "SNP",
+     "section": 20,
+     "departure": "21-09-26 00:27:00"
+    },
+    {
+     "station": "SLKN",
+     "section": 20,
+     "arrival": "21-09-26 00:33:00",
+     "departure": "21-09-26 00:33:00"
+    },
+    {
+     "station": "RUG",
+     "section": 20,
+     "arrival": "21-09-26 00:35:00",
+     "departure": "21-09-26 00:35:00"
+    },
+    {
+     "station": "GNU",
+     "section": 20,
+     "arrival": "21-09-26 00:39:26",
+     "departure": "21-09-26 00:39:26"
+    },
+    {
+     "station": "BDMJ",
+     "section": 20,
+     "arrival": "21-09-26 00:46:28",
+     "departure": "21-09-26 00:46:28"
+    },
+    {
+     "station": "SMK",
+     "section": 20,
+     "arrival": "21-09-26 00:53:51",
+     "departure": "21-09-26 00:53:51"
+    },
+    {
+     "station": "DWNA",
+     "section": 20,
+     "arrival": "21-09-26 01:05:22",
+     "departure": "21-09-26 01:05:22"
+    },
+    {
+     "station": "PNP",
+     "section": 20,
+     "arrival": "21-09-26 01:17:14",
+     "departure": "21-09-26 01:17:14"
+    },
+    {
+     "station": "BBDE",
+     "section": 20,
+     "arrival": "21-09-26 01:22:39",
+     "departure": "21-09-26 01:22:39"
+    },
+    {
+     "station": "GRA",
+     "section": 20,
+     "arrival": "21-09-26 01:27:39",
+     "departure": "21-09-26 01:27:39"
+    },
+    {
+     "station": "BZJT",
+     "section": 20,
+     "arrival": "21-09-26 01:31:39",
+     "departure": "21-09-26 01:31:39"
+    },
+    {
+     "station": "KUN",
+     "section": 20,
+     "arrival": "21-09-26 01:38:50",
+     "departure": "21-09-26 01:38:50"
+    },
+    {
+     "station": "BZK",
+     "section": 20,
+     "arrival": "21-09-26 01:43:49",
+     "departure": "21-09-26 01:43:49"
+    },
+    {
+     "station": "TRR",
+     "section": 20,
+     "arrival": "21-09-26 01:46:33",
+     "departure": "21-09-26 01:46:33"
+    },
+    {
+     "station": "NLKR",
+     "section": 20,
+     "arrival": "21-09-26 01:48:46",
+     "departure": "21-09-26 01:48:46"
+    },
+    {
+     "station": "AMIN",
+     "section": 20,
+     "arrival": "21-09-26 01:53:16",
+     "departure": "21-09-26 01:53:16"
+    },
+    {
+     "station": "KKDE",
+     "section": 20,
+     "arrival": "21-09-26 02:01:06",
+     "departure": "21-09-26 02:01:06"
+    },
+    {
+     "station": "DHKR",
+     "section": 20,
+     "arrival": "21-09-26 02:06:50",
+     "departure": "21-09-26 02:06:50"
+    },
+    {
+     "station": "DPP",
+     "section": 20,
+     "arrival": "21-09-26 02:09:49",
+     "departure": "21-09-26 02:09:49"
+    },
+    {
+     "station": "DHMZ",
+     "section": 20,
+     "arrival": "21-09-26 02:12:49",
+     "departure": "21-09-26 02:12:49"
+    },
+    {
+     "station": "SHDM",
+     "section": 20,
+     "arrival": "21-09-26 02:16:30",
+     "departure": "21-09-26 02:16:30"
+    },
+    {
+     "station": "MOY",
+     "section": 20,
+     "arrival": "21-09-26 02:22:48",
+     "departure": "21-09-26 02:22:48"
+    }
+   ]
+  },
+  {
+   "trainId": "TPAPNKJ DLI 200926476",
+   "points": [
+    {
+     "station": "SZM",
+     "section": 20,
+     "arrival": "20-09-26 23:39:00",
+     "departure": "20-09-26 23:39:00"
+    }
+   ]
+  }
+ ]
+}

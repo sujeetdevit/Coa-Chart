@@ -1,30 +1,13 @@
-import type { ChartDisplayOptions } from '../../current-chart/application/displayOptions';
 import { istClock, type CurrentChartModel, type EpochMs, type TimeRange } from '../../current-chart/domain';
-
-const TOGGLES: { key: keyof ChartDisplayOptions; label: string; title: string }[] = [
-  { key: 'showCrew', label: 'Crew', title: 'Crew details on the train label' },
-  {
-    key: 'highlightGps',
-    label: 'GPS Loco',
-    title: 'Highlight GPS-loco enabled trains (RTIS / REMLOT reported)',
-  },
-  { key: 'showGainLoss', label: 'Gain/Loss', title: 'Detention in red, gain in green' },
-  { key: 'showSpeed', label: 'Speed', title: 'Speed at each departure' },
-  {
-    key: 'showLastTrainLabel',
-    label: 'Last label',
-    title: 'Floating train label at the end of each train line (preference "Show Last Train Label")',
-  },
-];
 
 interface ChartHeaderProps {
   model: CurrentChartModel;
   visible: TimeRange | undefined;
-  options: ChartDisplayOptions;
-  onOptionsChange: (options: ChartDisplayOptions) => void;
+  frozen: boolean;
   onReset: () => void;
   onZoomTime: (factor: number) => void;
   onZoomStations: (factor: number) => void;
+  onSettings: () => void;
 }
 
 const ZOOM_STEP = 1.25;
@@ -50,15 +33,8 @@ function describeRange(range: TimeRange): string {
     : `${istDate(range.start)} ${istTime(range.start)} – ${istDate(range.end)} ${istTime(range.end)}`;
 }
 
-export function ChartHeader({
-  model,
-  visible,
-  options,
-  onOptionsChange,
-  onReset,
-  onZoomTime,
-  onZoomStations,
-}: ChartHeaderProps) {
+export function ChartHeader(props: ChartHeaderProps) {
+  const { model, visible } = props;
   return (
     <header className="chart-header">
       <span className="chart-title">Current Chart</span>
@@ -67,29 +43,20 @@ export function ChartHeader({
       <span className="muted">
         Last report {istDate(model.asOf)} {istTime(model.asOf)}
       </span>
+      {props.frozen && <span className="badge frozen">Frozen</span>}
       <span className="toolbar">
-        <span className="toggles">
-          {TOGGLES.map(({ key, label, title }) => (
-            <label key={key} title={title}>
-              <input
-                type="checkbox"
-                checked={options[key]}
-                onChange={(e) => {
-                  onOptionsChange({ ...options, [key]: e.target.checked });
-                }}
-              />
-              {label}
-            </label>
-          ))}
-        </span>
-        <button type="button" onClick={onReset} title="Back to the current window (double-click the chart)">
+        <button
+          type="button"
+          onClick={props.onReset}
+          title="Back to the current window (double-click the chart)"
+        >
           Now
         </button>
         <span className="button-group" aria-label="Time zoom">
           <button
             type="button"
             onClick={() => {
-              onZoomTime(1 / ZOOM_STEP);
+              props.onZoomTime(1 / ZOOM_STEP);
             }}
             title="Zoom out time (wheel)"
           >
@@ -98,7 +65,7 @@ export function ChartHeader({
           <button
             type="button"
             onClick={() => {
-              onZoomTime(ZOOM_STEP);
+              props.onZoomTime(ZOOM_STEP);
             }}
             title="Zoom in time (wheel)"
           >
@@ -109,7 +76,7 @@ export function ChartHeader({
           <button
             type="button"
             onClick={() => {
-              onZoomStations(1 / ZOOM_STEP);
+              props.onZoomStations(1 / ZOOM_STEP);
             }}
             title="Zoom out stations (Ctrl+wheel, or wheel over station names)"
           >
@@ -118,13 +85,16 @@ export function ChartHeader({
           <button
             type="button"
             onClick={() => {
-              onZoomStations(ZOOM_STEP);
+              props.onZoomStations(ZOOM_STEP);
             }}
             title="Zoom in stations (Ctrl+wheel, or wheel over station names)"
           >
             Stations +
           </button>
         </span>
+        <button type="button" onClick={props.onSettings} title="Chart preferences">
+          Settings
+        </button>
       </span>
     </header>
   );

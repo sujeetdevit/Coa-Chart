@@ -60,6 +60,10 @@ export interface ForecastDisplayConfig {
   defaultColour: string;
   /** "Opacity" of forecast lines, 0–1. Default 1.0. */
   opacity: number;
+  /** "Forecast Hour": how far ahead forecasts are shown. Default 2, up to 4. */
+  forecastHours: number;
+  /** "Forecast Past Time": only trains last reported within this many minutes get a forecast. Default 120. */
+  forecastPastMinutes: number;
 }
 
 /**
@@ -123,6 +127,8 @@ export const DEFAULT_CHART_CONFIG: ChartConfig = {
     coloured: false,
     defaultColour: 'Black',
     opacity: 1,
+    forecastHours: 2,
+    forecastPastMinutes: 120,
   },
   dwellLanes: {
     minDwellMinutes: 2,

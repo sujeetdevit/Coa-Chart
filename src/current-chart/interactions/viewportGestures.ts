@@ -41,6 +41,9 @@ export function viewportActionFor(gesture: ChartGesture, engine: CurrentChartEng
     case 'doubleClick':
       return { kind: 'reset' };
     case 'click':
+    case 'dragStart':
+    case 'dragEnd':
+    case 'contextMenu':
     case 'pointerMove':
     case 'pointerLeave':
       return { kind: 'none' };

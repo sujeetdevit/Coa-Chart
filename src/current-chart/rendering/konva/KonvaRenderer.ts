@@ -129,7 +129,8 @@ export class KonvaRenderer implements ChartRenderer {
   }
 
   private bindPointerEvents(el: HTMLElement): void {
-    let press: { x: number; y: number; id: number; dragging: boolean } | undefined;
+    let press:
+      { x: number; y: number; id: number; dragging: boolean; origin: { x: number; y: number } } | undefined;
 
     const listen = <K extends keyof HTMLElementEventMap>(
       type: K,
@@ -164,7 +165,7 @@ export class KonvaRenderer implements ChartRenderer {
 
     listen('pointerdown', (e) => {
       if (e.button !== 0) return;
-      press = { x: e.clientX, y: e.clientY, id: e.pointerId, dragging: false };
+      press = { x: e.clientX, y: e.clientY, id: e.pointerId, dragging: false, origin: this.local(e) };
     });
 
     listen('pointermove', (e) => {
@@ -173,17 +174,17 @@ export class KonvaRenderer implements ChartRenderer {
         const dy = e.clientY - press.y;
         if (!press.dragging && Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
           press.dragging = true;
+          this.emit({ type: 'dragStart', ...press.origin });
           try {
             el.setPointerCapture(e.pointerId);
           } catch {
-            // Pointer no longer active: drag without capture.
+            // Pointer no longer active (e.g. released outside the window): drag without capture.
           }
-          el.style.cursor = 'grabbing';
         }
         if (press.dragging) {
           press.x = e.clientX;
           press.y = e.clientY;
-          this.emit({ type: 'drag', dx, dy });
+          this.emit({ type: 'drag', dx, dy, ...this.local(e) });
           return;
         }
       }
@@ -194,17 +195,22 @@ export class KonvaRenderer implements ChartRenderer {
       if (!press || e.pointerId !== press.id) return;
       if (press.dragging) {
         if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-        el.style.cursor = '';
+        this.emit({ type: 'dragEnd', ...this.local(e) });
       } else {
         this.emit({ type: 'click', ...this.local(e) });
       }
       press = undefined;
     });
 
+    listen('contextmenu', (e) => {
+      e.preventDefault();
+      this.emit({ type: 'contextMenu', ...this.local(e) });
+    });
+
     listen('pointercancel', (e) => {
       if (!press || e.pointerId !== press.id) return;
       if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-      el.style.cursor = '';
+      if (press.dragging) this.emit({ type: 'dragEnd', ...this.local(e) });
       press = undefined;
     });
 
