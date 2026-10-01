@@ -1,19 +1,20 @@
 import Konva from 'konva';
-import type {
-  ChartGesture,
-  ChartRenderModel,
-  ChartRenderer,
-  LinePrimitive,
-  Primitive,
-  PrimitiveGroup,
-  RectPrimitive,
-  RenderLayerName,
-  TextPrimitive,
+import {
+  RENDER_LAYER_ORDER,
+  type ChartGesture,
+  type ChartRenderModel,
+  type ChartRenderer,
+  type CirclePrimitive,
+  type LinePrimitive,
+  type Primitive,
+  type PrimitiveGroup,
+  type RectPrimitive,
+  type RenderLayerName,
+  type SegmentsPrimitive,
+  type TextPrimitive,
 } from '../types';
 
-const LAYER_ORDER: RenderLayerName[] = ['background', 'axes', 'interaction'];
-
-type Shape = Konva.Rect | Konva.Line | Konva.Text;
+type Shape = Konva.Rect | Konva.Circle | Konva.Line | Konva.Text | Konva.Shape;
 
 interface GroupState {
   group: Konva.Group;
@@ -25,21 +26,23 @@ const DRAG_THRESHOLD = 3;
 
 /**
  * Draws a ChartRenderModel with Konva. Nodes are keyed by primitive id and updated in place;
- * hit detection is done by the chart engine, so no shape listens for events and Konva skips
- * its hit-canvas work entirely.
+ * a layer whose group array is unchanged from the previous model is neither reconciled nor
+ * redrawn. Hit detection is done by the chart engine, so no shape listens for events and Konva
+ * skips its hit-canvas work entirely.
  */
 export class KonvaRenderer implements ChartRenderer {
   private stage: Konva.Stage | undefined;
   private container: HTMLElement | undefined;
   private readonly layers = new Map<RenderLayerName, Konva.Layer>();
   private readonly groups = new Map<RenderLayerName, Map<string, GroupState>>();
+  private readonly lastLayers = new Map<RenderLayerName, PrimitiveGroup[]>();
   private readonly handlers = new Set<(gesture: ChartGesture) => void>();
   private readonly cleanup: (() => void)[] = [];
 
   mount(container: HTMLElement): void {
     this.container = container;
     this.stage = new Konva.Stage({ container: container as HTMLDivElement, listening: false });
-    for (const name of LAYER_ORDER) {
+    for (const name of RENDER_LAYER_ORDER) {
       const layer = new Konva.Layer({ listening: false });
       this.stage.add(layer);
       this.layers.set(name, layer);
@@ -51,14 +54,17 @@ export class KonvaRenderer implements ChartRenderer {
   render(model: ChartRenderModel): void {
     const stage = this.stage;
     if (!stage) return;
-    if (stage.width() !== model.width || stage.height() !== model.height) {
-      stage.size({ width: model.width, height: model.height });
-    }
-    for (const name of LAYER_ORDER) {
+    const resized = stage.width() !== model.width || stage.height() !== model.height;
+    if (resized) stage.size({ width: model.width, height: model.height });
+
+    for (const name of RENDER_LAYER_ORDER) {
       const layer = this.layers.get(name);
       const groups = this.groups.get(name);
+      const spec = model.layers[name];
       if (!layer || !groups) continue;
-      this.reconcileLayer(layer, groups, model.layers[name]);
+      if (!resized && this.lastLayers.get(name) === spec) continue;
+      this.reconcileLayer(layer, groups, spec);
+      this.lastLayers.set(name, spec);
       // Draw now rather than batchDraw(): callers already coalesce to one render per frame.
       layer.draw();
     }
@@ -76,6 +82,7 @@ export class KonvaRenderer implements ChartRenderer {
     this.stage = undefined;
     this.layers.clear();
     this.groups.clear();
+    this.lastLayers.clear();
   }
 
   // ── reconciliation ────────────────────────────────────────────────────
@@ -96,14 +103,15 @@ export class KonvaRenderer implements ChartRenderer {
         layer.add(state.group);
         orderChanged = true;
       }
-      if (spec.clip) state.group.clip(spec.clip);
-      else state.group.clip({ x: 0, y: 0, width: 0, height: 0 });
+      // A zero-size clip means "no clip" to Konva.
+      state.group.clip(spec.clip ?? { x: 0, y: 0, width: 0, height: 0 });
       reconcileGroup(state, spec.items);
     }
     for (const [id, state] of states) {
       if (!seen.has(id)) {
         state.group.destroy();
         states.delete(id);
+        orderChanged = true;
       }
     }
     if (orderChanged) groups.forEach((spec) => states.get(spec.id)?.group.moveToTop());
@@ -182,14 +190,23 @@ export class KonvaRenderer implements ChartRenderer {
       this.emit({ type: 'pointerMove', ...this.local(e) });
     });
 
-    const endPress = (e: PointerEvent) => {
+    listen('pointerup', (e) => {
       if (!press || e.pointerId !== press.id) return;
-      if (press.dragging && el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      if (press.dragging) {
+        if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+        el.style.cursor = '';
+      } else {
+        this.emit({ type: 'click', ...this.local(e) });
+      }
+      press = undefined;
+    });
+
+    listen('pointercancel', (e) => {
+      if (!press || e.pointerId !== press.id) return;
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
       el.style.cursor = '';
       press = undefined;
-    };
-    listen('pointerup', endPress);
-    listen('pointercancel', endPress);
+    });
 
     listen('pointerleave', () => {
       if (!press?.dragging) this.emit({ type: 'pointerLeave' });
@@ -229,15 +246,32 @@ function reconcileGroup(state: GroupState, items: Primitive[]): void {
   if (orderChanged) items.forEach((item) => state.nodes.get(item.id)?.node.moveToTop());
 }
 
+const BASE = { listening: false, perfectDrawEnabled: false } as const;
+
 function createNode(item: Primitive): Shape {
   switch (item.kind) {
     case 'rect':
-      return new Konva.Rect({ listening: false, perfectDrawEnabled: false });
+      return new Konva.Rect(BASE);
+    case 'circle':
+      return new Konva.Circle(BASE);
     case 'line':
-      return new Konva.Line({ listening: false, perfectDrawEnabled: false });
+      return new Konva.Line(BASE);
     case 'text':
-      return new Konva.Text({ listening: false, perfectDrawEnabled: false });
+      return new Konva.Text(BASE);
+    case 'segments':
+      return new Konva.Shape({ ...BASE, sceneFunc: drawSegments });
   }
+}
+
+/** One path for many disjoint segments: far cheaper than a node per tick mark. */
+function drawSegments(context: Konva.Context, shape: Konva.Shape): void {
+  const points = shape.getAttr('points') as number[];
+  context.beginPath();
+  for (let i = 0; i + 3 < points.length; i += 4) {
+    context.moveTo(points[i] ?? 0, points[i + 1] ?? 0);
+    context.lineTo(points[i + 2] ?? 0, points[i + 3] ?? 0);
+  }
+  context.strokeShape(shape);
 }
 
 function updateNode(node: Shape, item: Primitive): void {
@@ -245,11 +279,17 @@ function updateNode(node: Shape, item: Primitive): void {
     case 'rect':
       updateRect(node as Konva.Rect, item);
       return;
+    case 'circle':
+      updateCircle(node as Konva.Circle, item);
+      return;
     case 'line':
       updateLine(node as Konva.Line, item);
       return;
     case 'text':
       updateText(node as Konva.Text, item);
+      return;
+    case 'segments':
+      updateSegments(node as Konva.Shape, item);
       return;
   }
 }
@@ -261,6 +301,23 @@ function updateRect(node: Konva.Rect, item: RectPrimitive): void {
     width: item.width,
     height: item.height,
     fill: item.fill,
+    stroke: item.stroke ?? 'transparent',
+    strokeWidth: item.strokeWidth ?? 0,
+    strokeEnabled: item.stroke !== undefined,
+    opacity: item.opacity ?? 1,
+  });
+}
+
+function updateCircle(node: Konva.Circle, item: CirclePrimitive): void {
+  node.setAttrs({
+    x: item.x,
+    y: item.y,
+    radius: item.radius,
+    fill: item.fill ?? 'transparent',
+    fillEnabled: item.fill !== undefined,
+    stroke: item.stroke ?? 'transparent',
+    strokeWidth: item.strokeWidth ?? 0,
+    strokeEnabled: item.stroke !== undefined,
     opacity: item.opacity ?? 1,
   });
 }
@@ -272,6 +329,17 @@ function updateLine(node: Konva.Line, item: LinePrimitive): void {
     strokeWidth: item.strokeWidth,
     dash: item.dash ?? [],
     dashEnabled: item.dash !== undefined,
+    opacity: item.opacity ?? 1,
+    lineCap: item.lineCap ?? 'butt',
+    lineJoin: item.lineJoin ?? 'miter',
+  });
+}
+
+function updateSegments(node: Konva.Shape, item: SegmentsPrimitive): void {
+  node.setAttrs({
+    points: item.points,
+    stroke: item.stroke,
+    strokeWidth: item.strokeWidth,
     opacity: item.opacity ?? 1,
   });
 }
@@ -286,6 +354,8 @@ function updateText(node: Konva.Text, item: TextPrimitive): void {
     fontSize: item.fontSize,
     fontFamily: item.fontFamily,
     fontStyle: item.bold ? 'bold' : 'normal',
+    lineHeight: item.lineHeight ?? 1,
+    align: item.align,
     x: item.x,
     y: item.y,
   });

@@ -40,6 +40,7 @@ export function viewportActionFor(gesture: ChartGesture, engine: CurrentChartEng
       return { kind: 'engine', engine: engine.panBy(gesture.dx, gesture.dy) };
     case 'doubleClick':
       return { kind: 'reset' };
+    case 'click':
     case 'pointerMove':
     case 'pointerLeave':
       return { kind: 'none' };

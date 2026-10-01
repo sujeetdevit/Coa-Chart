@@ -10,6 +10,30 @@ export interface RectPrimitive {
   width: number;
   height: number;
   fill: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+}
+
+export interface CirclePrimitive {
+  kind: 'circle';
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+}
+
+/** Many disjoint straight segments drawn as one node: flat [x1, y1, x2, y2, …]. */
+export interface SegmentsPrimitive {
+  kind: 'segments';
+  id: string;
+  points: number[];
+  stroke: string;
+  strokeWidth: number;
   opacity?: number;
 }
 
@@ -22,6 +46,8 @@ export interface LinePrimitive {
   strokeWidth: number;
   dash?: number[];
   opacity?: number;
+  lineCap?: 'butt' | 'round';
+  lineJoin?: 'miter' | 'round';
 }
 
 export type TextAlign = 'left' | 'center' | 'right';
@@ -40,9 +66,11 @@ export interface TextPrimitive {
   bold?: boolean;
   align: TextAlign;
   baseline: TextBaseline;
+  /** Line height multiplier for multi-line text (lines separated by "\n"). */
+  lineHeight?: number;
 }
 
-export type Primitive = RectPrimitive | LinePrimitive | TextPrimitive;
+export type Primitive = RectPrimitive | CirclePrimitive | SegmentsPrimitive | LinePrimitive | TextPrimitive;
 
 export interface ClipRect {
   x: number;
@@ -57,9 +85,23 @@ export interface PrimitiveGroup {
   items: Primitive[];
 }
 
-/** Layer names map to renderer layers. Static/rarely changing content stays out of `interaction`. */
-export type RenderLayerName = 'background' | 'axes' | 'interaction';
+/**
+ * Layer names map to renderer layers, bottom to top. Hover/selection lives only in `interaction`
+ * so pointer movement never redraws the rest.
+ */
+export type RenderLayerName = 'background' | 'movement' | 'axes' | 'interaction';
 
+export const RENDER_LAYER_ORDER: readonly RenderLayerName[] = [
+  'background',
+  'movement',
+  'axes',
+  'interaction',
+];
+
+/**
+ * A renderer may skip a layer whose group array is the same object as in the previous model,
+ * so builders should reuse layer arrays that did not change.
+ */
 export interface ChartRenderModel {
   width: number;
   height: number;

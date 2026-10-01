@@ -16,6 +16,7 @@ export const IST_OFFSET_MS = 5 * MS_PER_HOUR + 30 * MS_PER_MINUTE;
 export function istClock(ms: EpochMs): {
   hour: number;
   minute: number;
+  second: number;
   day: number;
   month: number;
   year: number;
@@ -24,6 +25,7 @@ export function istClock(ms: EpochMs): {
   return {
     hour: d.getUTCHours(),
     minute: d.getUTCMinutes(),
+    second: d.getUTCSeconds(),
     day: d.getUTCDate(),
     month: d.getUTCMonth() + 1,
     year: d.getUTCFullYear(),

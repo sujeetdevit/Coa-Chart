@@ -2,7 +2,7 @@ import { DEFAULT_CHART_CONFIG } from '../../configuration/chartConfig';
 import type { CurrentChartModel, EpochMs } from '../../domain';
 import type { RawChartSnapshot } from '../types';
 import { validateSnapshot } from '../validateSnapshot';
-import { latestReportedTime, reportStaleTrains } from './asOf';
+import { eventsAfter, reportStaleTrains, snapshotTime } from './asOf';
 import { adaptBlocks } from './blockAdapter';
 import { adaptBoard } from './boardAdapter';
 import { adaptCautions } from './cautionAdapter';
@@ -10,7 +10,10 @@ import { adaptTrainRemarks } from './remarkAdapter';
 import { adaptTrains } from './trainAdapter';
 
 export interface NormalizeOptions {
-  /** Snapshot "now". Defaults to the latest reported arrival/departure, else the current clock. */
+  /**
+   * Snapshot "now". Defaults to the end of continuous reporting in the data (see snapshotTime),
+   * else the current clock.
+   */
   asOf?: EpochMs;
   boardId?: number;
   staleEventHours?: number;
@@ -40,7 +43,17 @@ export function normalizeSnapshot(raw: RawChartSnapshot, options: NormalizeOptio
   }
 
   const trains = adaptTrains(snapshot.movement, snapshot.crew, snapshot.loco, board, diagnostics);
-  const asOf = options.asOf ?? latestReportedTime(trains) ?? Date.now();
+  const asOf = options.asOf ?? snapshotTime(trains, DEFAULT_CHART_CONFIG.snapshotTime) ?? Date.now();
+  if (options.asOf === undefined) {
+    const later = eventsAfter(trains, asOf);
+    if (later > 0) {
+      diagnostics.push({
+        source: 'movement',
+        severity: 'info',
+        message: `Snapshot time set to the end of continuous reporting; ${later} later isolated report(s) appear ahead of "now"`,
+      });
+    }
+  }
   reportStaleTrains(
     trains,
     asOf,

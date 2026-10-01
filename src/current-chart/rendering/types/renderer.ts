@@ -12,6 +12,7 @@ export type ChartGesture =
       shiftKey: boolean;
     }
   | { type: 'drag'; dx: number; dy: number }
+  | { type: 'click'; x: number; y: number }
   | { type: 'doubleClick'; x: number; y: number }
   | { type: 'pointerMove'; x: number; y: number }
   | { type: 'pointerLeave' };

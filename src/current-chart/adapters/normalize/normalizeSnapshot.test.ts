@@ -116,8 +116,10 @@ describe('normalizeSnapshot with the supplied JSON', () => {
     });
   });
 
-  it('uses the latest reported event as the snapshot time', () => {
-    expect(model.asOf).toBe(ist('21-09-26 07:54:43'));
+  it('sets the snapshot time to the end of continuous reporting, ignoring stragglers', () => {
+    // Reporting is dense until 21-09 00:25; three isolated reports follow (01:32, 03:05, 07:54).
+    expect(model.asOf).toBe(ist('21-09-26 00:25:00'));
+    expect(messages).toContainEqual(expect.stringContaining('3 later isolated report(s)'));
   });
 
   it('reports the 6 stale trains', () => {

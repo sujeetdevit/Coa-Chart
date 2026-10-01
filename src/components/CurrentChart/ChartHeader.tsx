@@ -1,8 +1,21 @@
+import type { ChartDisplayOptions } from '../../current-chart/application/displayOptions';
 import { istClock, type CurrentChartModel, type EpochMs, type TimeRange } from '../../current-chart/domain';
+
+const TOGGLES: { key: keyof ChartDisplayOptions; label: string; title: string }[] = [
+  { key: 'showGainLoss', label: 'Gain/Loss', title: 'Detention in red, gain in green' },
+  { key: 'showSpeed', label: 'Speed', title: 'Speed at each departure' },
+  {
+    key: 'showLastTrainLabel',
+    label: 'Last label',
+    title: 'Floating train label at the end of each train line (preference "Show Last Train Label")',
+  },
+];
 
 interface ChartHeaderProps {
   model: CurrentChartModel;
   visible: TimeRange | undefined;
+  options: ChartDisplayOptions;
+  onOptionsChange: (options: ChartDisplayOptions) => void;
   onReset: () => void;
   onZoomTime: (factor: number) => void;
   onZoomStations: (factor: number) => void;
@@ -31,7 +44,15 @@ function describeRange(range: TimeRange): string {
     : `${istDate(range.start)} ${istTime(range.start)} – ${istDate(range.end)} ${istTime(range.end)}`;
 }
 
-export function ChartHeader({ model, visible, onReset, onZoomTime, onZoomStations }: ChartHeaderProps) {
+export function ChartHeader({
+  model,
+  visible,
+  options,
+  onOptionsChange,
+  onReset,
+  onZoomTime,
+  onZoomStations,
+}: ChartHeaderProps) {
   return (
     <header className="chart-header">
       <span className="chart-title">Current Chart</span>
@@ -41,6 +62,20 @@ export function ChartHeader({ model, visible, onReset, onZoomTime, onZoomStation
         Last report {istDate(model.asOf)} {istTime(model.asOf)}
       </span>
       <span className="toolbar">
+        <span className="toggles">
+          {TOGGLES.map(({ key, label, title }) => (
+            <label key={key} title={title}>
+              <input
+                type="checkbox"
+                checked={options[key]}
+                onChange={(e) => {
+                  onOptionsChange({ ...options, [key]: e.target.checked });
+                }}
+              />
+              {label}
+            </label>
+          ))}
+        </span>
         <button type="button" onClick={onReset} title="Back to the current window (double-click the chart)">
           Now
         </button>

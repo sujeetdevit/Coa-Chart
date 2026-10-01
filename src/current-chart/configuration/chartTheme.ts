@@ -39,6 +39,41 @@ export interface ChartTheme {
     lineWidth: number;
     lineDash: number[];
   };
+  movement: MovementTheme;
+  interaction: {
+    hoverWidth: number;
+    hoverOpacity: number;
+    selectedWidth: number;
+    selectedOpacity: number;
+  };
+}
+
+export interface MovementTheme {
+  /** Manual: actual movement is a solid line in the train colour. */
+  lineWidth: number;
+  /** Manual: forecast is a dashed line. */
+  forecastDash: number[];
+  /** Legacy: 1×8 px arrival/departure tick marks in the train colour. */
+  tickLength: number;
+  tickWidth: number;
+  pointRadius: number;
+  /** Manual icon colours: red floating point, green departed, square terminating. */
+  floatingPoint: string;
+  departedPoint: string;
+  destinationSquare: string;
+  squareSize: number;
+  /** Manual: detention in red, gain in green. */
+  detention: string;
+  gain: string;
+  gainLossFontSize: number;
+  /** Legacy speed colours by direction. */
+  speedUp: string;
+  speedDown: string;
+  speedFontSize: number;
+  labelFontFamily: string;
+  labelBackground: string;
+  labelBorderWidth: number;
+  arrowSize: number;
 }
 
 export const DEFAULT_CHART_THEME: ChartTheme = {
@@ -69,5 +104,32 @@ export const DEFAULT_CHART_THEME: ChartTheme = {
     line: '#9a9a9a',
     lineWidth: 1,
     lineDash: [1, 4],
+  },
+  movement: {
+    lineWidth: 1.5,
+    forecastDash: [6, 4],
+    tickLength: 8,
+    tickWidth: 1,
+    pointRadius: 3,
+    floatingPoint: '#9b0000',
+    departedPoint: '#00c800',
+    destinationSquare: '#9b0000',
+    squareSize: 7,
+    detention: '#e00000',
+    gain: '#008a00',
+    gainLossFontSize: 10,
+    speedUp: '#e07000',
+    speedDown: '#8b4513',
+    speedFontSize: 9,
+    labelFontFamily: 'Consolas, "Courier New", monospace',
+    labelBackground: 'rgba(255,255,255,0.85)',
+    labelBorderWidth: 0.75,
+    arrowSize: 7,
+  },
+  interaction: {
+    hoverWidth: 5,
+    hoverOpacity: 0.3,
+    selectedWidth: 6,
+    selectedOpacity: 0.45,
   },
 };

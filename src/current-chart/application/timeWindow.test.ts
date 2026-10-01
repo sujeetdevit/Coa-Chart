@@ -23,6 +23,10 @@ describe('pannableTimeExtent with the supplied data', () => {
   const model = normalizeSnapshot(loadSuppliedSnapshot());
   const window = initialTimeWindow(model.asOf, DEFAULT_CHART_CONFIG);
 
+  it('opens on 22:20–01:20 for the supplied data (now = 00:25)', () => {
+    expect(window).toEqual({ start: ist('20-09-26 22:20:00'), end: ist('21-09-26 01:20:00') });
+  });
+
   it('reaches back to the earliest non-stale event and forward to the window end', () => {
     expect(pannableTimeExtent(model, window, DEFAULT_CHART_CONFIG)).toEqual({
       start: ist('19-09-26 17:49:47'),

@@ -3,7 +3,10 @@ import { normalizeSnapshot } from '../adapters';
 import { initialTimeWindow, pannableTimeExtent } from '../application/timeWindow';
 import { DEFAULT_CHART_CONFIG } from '../configuration/chartConfig';
 import { MS_PER_MINUTE } from '../domain';
+import { buildTrainScene } from '../application/trainScene';
 import { CurrentChartEngine } from './CurrentChartEngine';
+import { computeDwellLanes } from './dwellLanes';
+import { TrainHitIndex } from './hitIndex';
 
 describe('engine with the supplied data', () => {
   const model = normalizeSnapshot(loadSuppliedSnapshot());
@@ -53,5 +56,27 @@ describe('engine with the supplied data', () => {
 
   it('shows "now" inside the initial window', () => {
     expect(engine.getCurrentTimePosition().visible).toBe(true);
+  });
+
+  it('builds a scene of the trains in the initial window and hit-tests their points', () => {
+    const lanes = computeDwellLanes(model.trains, DEFAULT_CHART_CONFIG.dwellLanes);
+    const scene = buildTrainScene(engine, model, lanes);
+    expect(scene.items.length).toBe(30);
+    expect(scene.items.length).toBeLessThan(model.trains.length);
+
+    const index = new TrainHitIndex(scene.items.map((i) => i.actual));
+    const item = scene.items.find((i) => i.actual.points.length > 2);
+    const point = item?.actual.points[1];
+    if (!item || !point) throw new Error('no multi-point train in view');
+    const hit = index.hitTest({ x: point.x + 1, y: point.y }, { vertexPx: 6, segmentPx: 5 });
+    expect(hit?.kind).toBe('vertex');
+    expect(
+      scene.byId.get(hit?.trainId ?? '')?.actual.points[hit?.kind === 'vertex' ? hit.pointIndex : -1],
+    ).toBeDefined();
+  });
+
+  it('assigns separate lanes to trains standing together', () => {
+    const lanes = computeDwellLanes(model.trains, DEFAULT_CHART_CONFIG.dwellLanes);
+    expect(lanes.size).toBeGreaterThan(0);
   });
 });

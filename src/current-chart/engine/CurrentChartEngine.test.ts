@@ -175,6 +175,40 @@ describe('CurrentChartEngine — train geometry', () => {
     expect(engine.getTrainGeometry(train('T3', [])).bounds).toBeUndefined();
   });
 
+  it('offsets dwells in a lane > 0 by the lane offset, upwards for UP trains', () => {
+    const dwell = (direction: 'UP' | 'DN') =>
+      train('T9', [{ ...event(1, 'BBB', { arrival: min(10), departure: min(30) }), direction }]);
+    const lanes = new Map([['T9#0', 2]]);
+    const yBBB = engine.stationToY('1:BBB') ?? NaN;
+    const offset = 2 * DEFAULT_CHART_CONFIG.dwellLanes.laneOffsetPx;
+    expect(engine.getTrainGeometry(dwell('DN'), lanes).points.map((p) => p.y)).toEqual([
+      yBBB + offset,
+      yBBB + offset,
+    ]);
+    expect(engine.getTrainGeometry(dwell('UP'), lanes).points[0]?.y).toBeCloseTo(yBBB - offset, 9);
+    expect(engine.getTrainGeometry(dwell('UP')).points[0]?.y).toBeCloseTo(yBBB, 9);
+  });
+
+  it('starts a forecast at the last actual vertex', () => {
+    const t = {
+      ...train('T1', [event(1, 'AAA', { departure: min(10) }), event(2, 'BBB', { arrival: min(20) })]),
+      forecast: {
+        kind: 'BASIC' as const,
+        points: [
+          { stationCode: 'BBB', sectionId: 1, departure: min(22) },
+          { stationCode: 'CCC', sectionId: 1, arrival: min(35) },
+        ],
+      },
+    };
+    const geometry = engine.getForecastGeometry(t);
+    expect(geometry.points.map((p) => [p.kind, p.stationId])).toEqual([
+      ['arrival', '1:BBB'],
+      ['forecast', '1:BBB'],
+      ['forecast', '1:CCC'],
+    ]);
+    expect(engine.getForecastGeometry(train('none', [])).points).toEqual([]);
+  });
+
   it('follows the viewport', () => {
     const t = train('T1', [event(1, 'AAA', { departure: min(60) })]);
     const zoomed = engine.zoomAt({ x: 0, y: 0 }, 2);

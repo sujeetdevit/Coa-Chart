@@ -101,6 +101,94 @@ body,
   user-select: none;
 }
 
+.toggles {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggles label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.chart-tooltip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  max-width: 360px;
+  padding: 6px 8px;
+  border: 1px solid #b8c0c8;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chart-tooltip-title {
+  font-weight: 600;
+}
+
+.train-panel {
+  position: absolute;
+  left: 68px;
+  top: 32px;
+  z-index: 1;
+  min-width: 240px;
+  max-width: 380px;
+  border: 1px solid #b8c0c8;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+}
+
+.train-panel header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.train-panel header button {
+  margin-left: auto;
+  border: none;
+  background: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.train-panel-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.train-panel dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.train-panel dt {
+  color: #666;
+}
+
+.train-panel dd {
+  margin: 0;
+}
+
 /* ── diagnostics ────────────────────────────────────────── */
 
 .diagnostics {

@@ -141,6 +141,7 @@ export function buildBaseRenderModel(engine: CurrentChartEngine, theme: ChartThe
           height: plot.height + 2 * stationAxis.boundaryLabelSize,
         }),
       ],
+      movement: [],
       interaction: [],
     },
   };

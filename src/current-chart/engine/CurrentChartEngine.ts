@@ -2,6 +2,7 @@ import type { ChartConfig } from '../configuration/chartConfig';
 import {
   MS_PER_MINUTE,
   type Board,
+  type Direction,
   type EpochMs,
   type Station,
   type StationId,
@@ -11,7 +12,13 @@ import {
 import { buildStationLayout, nearestPositionIndex, type StationLayout } from './stationLayout';
 import { timeToX, xToTime } from './timeScale';
 import { timeTicks, type TickSpacing, type TimeTick } from './timeTicks';
-import { actualPathVertices, type PathPointKind } from './trainGeometry';
+import { dwellLaneKey, type DwellLanes } from './dwellLanes';
+import {
+  actualPathVertices,
+  forecastPathVertices,
+  type PathPointKind,
+  type TrainPathVertex,
+} from './trainGeometry';
 import type { Margins, Point, Rect, Size } from './types';
 import {
   clampViewport,
@@ -53,6 +60,7 @@ export interface TrainPathPoint extends Point {
   stationId: StationId;
   kind: PathPointKind;
   eventIndex: number;
+  direction?: Direction;
 }
 
 export interface TrainGeometry {
@@ -172,16 +180,40 @@ export class CurrentChartEngine {
 
   // ── geometry ──────────────────────────────────────────────────────────
 
-  /** Actual-movement polyline of a train in plot coordinates. Off-board vertices are skipped. */
-  getTrainGeometry(train: Train): TrainGeometry {
+  /**
+   * Actual-movement polyline of a train in plot coordinates. Off-board vertices are skipped.
+   * With `lanes`, dwells in a lane > 0 are offset vertically (UP trains upwards, DN downwards).
+   */
+  getTrainGeometry(train: Train, lanes?: DwellLanes): TrainGeometry {
+    return this.placeVertices(train.id, actualPathVertices(train), lanes);
+  }
+
+  /**
+   * Forecast polyline of a train in plot coordinates, starting from its last actual vertex so the
+   * dashed line continues the solid one. Empty when the train has no forecast.
+   */
+  getForecastGeometry(train: Train, lanes?: DwellLanes): TrainGeometry {
+    const forecast = forecastPathVertices(train);
+    if (forecast.length === 0) return { trainId: train.id, points: [] };
+    const actual = actualPathVertices(train);
+    const last = actual[actual.length - 1];
+    const vertices = last && last.time <= (forecast[0]?.time ?? last.time) ? [last, ...forecast] : forecast;
+    return this.placeVertices(train.id, vertices, lanes);
+  }
+
+  private placeVertices(trainId: string, vertices: TrainPathVertex[], lanes?: DwellLanes): TrainGeometry {
+    const laneOffset = this.options.config.dwellLanes.laneOffsetPx;
     const points: TrainPathPoint[] = [];
-    for (const vertex of actualPathVertices(train)) {
-      const y = this.stationToY(vertex.stationId);
+    for (const vertex of vertices) {
+      let y = this.stationToY(vertex.stationId);
       if (y === undefined) continue;
+      const lane =
+        vertex.kind === 'forecast' ? 0 : (lanes?.get(dwellLaneKey(trainId, vertex.eventIndex)) ?? 0);
+      if (lane > 0) y += lane * laneOffset * (vertex.direction === 'UP' ? -1 : 1);
       points.push({ ...vertex, x: this.timeToX(vertex.time), y });
     }
     const bounds = boundingBox(points);
-    return bounds ? { trainId: train.id, points, bounds } : { trainId: train.id, points };
+    return bounds ? { trainId, points, bounds } : { trainId, points };
   }
 
   // ── navigation (returns new engines) ──────────────────────────────────
