@@ -6,8 +6,7 @@ import type { ChartRenderModel, PrimitiveGroup } from '../types';
  */
 export function composeRenderModel(
   base: ChartRenderModel,
-  movement: PrimitiveGroup[],
-  interaction: PrimitiveGroup[],
+  layers: { infrastructure: PrimitiveGroup[]; movement: PrimitiveGroup[]; interaction: PrimitiveGroup[] },
 ): ChartRenderModel {
-  return { ...base, layers: { ...base.layers, movement, interaction } };
+  return { ...base, layers: { ...base.layers, ...layers } };
 }

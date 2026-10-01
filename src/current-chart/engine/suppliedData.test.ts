@@ -60,7 +60,7 @@ describe('engine with the supplied data', () => {
 
   it('builds a scene of the trains in the initial window and hit-tests their points', () => {
     const lanes = computeDwellLanes(model.trains, DEFAULT_CHART_CONFIG.dwellLanes);
-    const scene = buildTrainScene(engine, model, lanes);
+    const scene = buildTrainScene(engine, model, lanes, DEFAULT_CHART_CONFIG);
     expect(scene.items.length).toBe(30);
     expect(scene.items.length).toBeLessThan(model.trains.length);
 

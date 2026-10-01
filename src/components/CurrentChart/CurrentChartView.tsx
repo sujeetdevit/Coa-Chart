@@ -3,6 +3,7 @@ import {
   defaultDisplayOptions,
   type ChartDisplayOptions,
 } from '../../current-chart/application/displayOptions';
+import { buildOverlayScene, overlayAt, type OverlayHit } from '../../current-chart/application/overlayScene';
 import { describeTrainHover } from '../../current-chart/application/trainDescriptions';
 import { buildTrainScene } from '../../current-chart/application/trainScene';
 import { initialTimeWindow, pannableTimeExtent } from '../../current-chart/application/timeWindow';
@@ -17,9 +18,14 @@ import {
   buildInteractionLayer,
   type ChartHover,
 } from '../../current-chart/rendering/build/buildInteractionLayer';
+import {
+  buildAnnotationGroups,
+  buildInfrastructureLayer,
+} from '../../current-chart/rendering/build/buildInfrastructureLayer';
 import { buildMovementLayer } from '../../current-chart/rendering/build/buildMovementLayer';
 import { composeRenderModel } from '../../current-chart/rendering/build/composeRenderModel';
 import type { ChartGesture } from '../../current-chart/rendering/types';
+import { useBlinkPhase } from '../../hooks/useBlinkPhase';
 import { useElementSize } from '../../hooks/useElementSize';
 import { ChartCanvas } from './ChartCanvas';
 import { ChartHeader } from './ChartHeader';
@@ -61,35 +67,56 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
   // ── UI state ──
   const [options, setOptions] = useState<ChartDisplayOptions>(() => defaultDisplayOptions(config));
   const [hover, setHover] = useState<ChartHover>();
+  const [overlayHover, setOverlayHover] = useState<OverlayHit>();
   const [selectedId, setSelectedId] = useState<string>();
 
-  // ── derived scene, hit index and layers ──
+  // ── derived scenes, hit indexes and layers ──
   const scene = useMemo(
-    () => (engine ? buildTrainScene(engine, model, lanes) : undefined),
+    () => (engine ? buildTrainScene(engine, model, lanes, config) : undefined),
     [engine, model, lanes],
+  );
+  const overlays = useMemo(
+    () => (engine ? buildOverlayScene(engine, model, theme, model.asOf) : undefined),
+    [engine, model],
   );
   const hitIndex = useMemo(
     () => (scene ? new TrainHitIndex(scene.items.map((i) => i.actual)) : undefined),
     [scene],
   );
+  const blinkOff = useBlinkPhase(scene?.items.some((i) => i.crewOverDuty) ?? false, config.crew);
+
   const base = useMemo(() => (engine ? buildBaseRenderModel(engine, theme) : undefined), [engine]);
+  const infrastructure = useMemo(
+    () => (engine && overlays ? buildInfrastructureLayer(overlays, engine, theme) : []),
+    [engine, overlays],
+  );
+  const annotations = useMemo(
+    () => (engine && overlays ? buildAnnotationGroups(overlays, engine, theme) : []),
+    [engine, overlays],
+  );
   const movement = useMemo(
-    () => (engine && scene ? buildMovementLayer(scene, engine, options, config, theme) : []),
-    [engine, scene, options],
+    () =>
+      engine && scene
+        ? [...buildMovementLayer(scene, engine, options, config, theme, blinkOff), ...annotations]
+        : [],
+    [engine, scene, options, blinkOff, annotations],
   );
   const interaction = useMemo(
-    () => (engine && scene ? buildInteractionLayer(scene, engine, hover, selectedId, theme) : []),
-    [engine, scene, hover, selectedId],
+    () =>
+      engine && scene
+        ? buildInteractionLayer(scene, engine, hover, selectedId, theme, overlayHover?.rect)
+        : [],
+    [engine, scene, hover, selectedId, overlayHover],
   );
   const renderModel = useMemo(
-    () => (base ? composeRenderModel(base, movement, interaction) : undefined),
-    [base, movement, interaction],
+    () => (base ? composeRenderModel(base, { infrastructure, movement, interaction }) : undefined),
+    [base, infrastructure, movement, interaction],
   );
 
   // Latest values for the gesture handler, which is registered once.
-  const live = useRef({ engine, scene, hitIndex, hover });
+  const live = useRef({ engine, scene, overlays, hitIndex, hover, overlayHover });
   useEffect(() => {
-    live.current = { engine, scene, hitIndex, hover };
+    live.current = { engine, scene, overlays, hitIndex, hover, overlayHover };
   });
 
   const update = useCallback((change: (engine: CurrentChartEngine) => CurrentChartEngine) => {
@@ -101,7 +128,11 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
     return e && index ? trainAt(x, y, e, index) : undefined;
   }, []);
 
-  const showHover = useCallback((next: ChartHover | undefined, x: number, y: number) => {
+  const setOverlay = useCallback((hit: OverlayHit | undefined) => {
+    if (hit?.id !== live.current.overlayHover?.id) setOverlayHover(hit);
+  }, []);
+
+  const showTrainHover = useCallback((next: ChartHover | undefined, x: number, y: number) => {
     if (!sameHover(next, live.current.hover)) setHover(next);
     if (areaRef.current) areaRef.current.style.cursor = next ? 'pointer' : '';
     const item = next ? live.current.scene?.byId.get(next.trainId) : undefined;
@@ -119,21 +150,49 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
     tooltipRef.current?.show(describeTrainHover(item.train, point, isFloating), x, y);
   }, []);
 
+  /**
+   * Hover priority: small overlay targets (icons, boxes, remarks), then trains, then large
+   * overlay areas (blocks), so trains running through a block stay hoverable.
+   */
+  const showHover = useCallback(
+    (x: number, y: number) => {
+      const { overlays: o } = live.current;
+      const top = o ? overlayAt(o.topHits, x, y) : undefined;
+      const train = top ? undefined : pointerAt(x, y);
+      const bottom = top || train || !o ? undefined : overlayAt(o.bottomHits, x, y);
+      const overlay = top ?? bottom;
+      setOverlay(overlay);
+      if (overlay) {
+        if (live.current.hover) setHover(undefined);
+        if (areaRef.current) areaRef.current.style.cursor = 'help';
+        tooltipRef.current?.show(overlay.tooltip, x, y);
+        return;
+      }
+      showTrainHover(train, x, y);
+    },
+    [pointerAt, setOverlay, showTrainHover],
+  );
+
+  const hideHover = useCallback(() => {
+    setOverlay(undefined);
+    showTrainHover(undefined, 0, 0);
+  }, [setOverlay, showTrainHover]);
+
   const onGesture = useCallback(
     (gesture: ChartGesture) => {
       switch (gesture.type) {
         case 'pointerMove':
-          showHover(pointerAt(gesture.x, gesture.y), gesture.x, gesture.y);
+          showHover(gesture.x, gesture.y);
           return;
         case 'pointerLeave':
-          showHover(undefined, 0, 0);
+          hideHover();
           return;
         case 'click':
           setSelectedId(pointerAt(gesture.x, gesture.y)?.trainId);
           return;
         case 'drag':
         case 'wheel':
-          showHover(undefined, 0, 0);
+          hideHover();
           break;
         case 'doubleClick':
           break;
@@ -145,7 +204,7 @@ export function CurrentChartView({ model }: CurrentChartViewProps) {
         return current;
       });
     },
-    [update, initialWindow, pointerAt, showHover],
+    [update, initialWindow, pointerAt, showHover, hideHover],
   );
 
   const zoom = useCallback(

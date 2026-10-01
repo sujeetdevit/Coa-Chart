@@ -332,6 +332,9 @@ function updateLine(node: Konva.Line, item: LinePrimitive): void {
     opacity: item.opacity ?? 1,
     lineCap: item.lineCap ?? 'butt',
     lineJoin: item.lineJoin ?? 'miter',
+    closed: item.closed ?? false,
+    fill: item.fill ?? 'transparent',
+    fillEnabled: item.fill !== undefined,
   });
 }
 
@@ -355,6 +358,7 @@ function updateText(node: Konva.Text, item: TextPrimitive): void {
     fontFamily: item.fontFamily,
     fontStyle: item.bold ? 'bold' : 'normal',
     lineHeight: item.lineHeight ?? 1,
+    opacity: item.opacity ?? 1,
     align: item.align,
     x: item.x,
     y: item.y,

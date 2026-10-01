@@ -17,7 +17,8 @@ export function wrapLabel(text: string, wrapAt: number, maxLines: number): strin
   const lines: string[] = [];
   let current = '';
   for (const word of text.split(/\s+/).filter(Boolean)) {
-    const pieces = word.match(new RegExp(`.{1,${wrapAt}}`, 'g')) ?? [];
+    // Allow a little overflow rather than leaving a one- or two-character tail on its own line.
+    const pieces = word.length <= wrapAt + 2 ? [word] : (word.match(new RegExp(`.{1,${wrapAt}}`, 'g')) ?? []);
     for (const piece of pieces) {
       if (current === '') current = piece;
       else if (current.length + 1 + piece.length <= wrapAt) current += ` ${piece}`;
@@ -80,6 +81,8 @@ export function buildMovementLayer(
   options: ChartDisplayOptions,
   config: ChartConfig,
   theme: ChartTheme,
+  /** Crew-duty blink phase: dims the floating labels of over-duty trains. */
+  blinkOff = false,
 ): PrimitiveGroup[] {
   const { plot } = engine.getChartBounds();
   const ox = plot.x;
@@ -87,16 +90,31 @@ export function buildMovementLayer(
   const m = theme.movement;
   const clip = { x: plot.x, y: plot.y, width: plot.width, height: plot.height };
 
+  const glow: Primitive[] = [];
   const lines: Primitive[] = [];
   const points: Primitive[] = [];
   const figures: Primitive[] = [];
-  const labelRequests: (LabelRequest & { item: TrainSceneItem; lines: string[] })[] = [];
+  const labelRequests: (LabelRequest & { item: TrainSceneItem; lines: string[]; blinks: boolean })[] = [];
   const labelFont = config.trainLabels.fontSize;
+  const showCrewOnLabel = options.showCrew && config.crew.chartViewCrewDetails;
 
   for (const item of scene.items) {
     const { train, actual, forecast, markers } = item;
     const id = train.id;
     const colour = train.colour;
+
+    if (options.highlightGps && item.gps && actual.points.length >= 2) {
+      glow.push({
+        kind: 'line',
+        id: `gps:${id}`,
+        points: flat(actual.points, ox, oy),
+        stroke: m.gpsGlow,
+        strokeWidth: m.gpsGlowWidth,
+        opacity: 0.55,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+    }
 
     // Forecast first so the actual line draws over the shared vertex.
     if (forecast.points.length >= 2) {
@@ -118,6 +136,19 @@ export function buildMovementLayer(
         stroke: colour,
         strokeWidth: m.lineWidth,
         lineJoin: 'round',
+      });
+    }
+    for (const i of item.tslSegments) {
+      const a = actual.points[i];
+      const b = actual.points[i + 1];
+      if (!a || !b) continue;
+      lines.push({
+        kind: 'line',
+        id: `tsl:${id}:${i}`,
+        points: [a.x + ox, a.y + oy, b.x + ox, b.y + oy],
+        stroke: m.tsl,
+        strokeWidth: m.tslWidth,
+        dash: m.tslDash,
       });
     }
     if (actual.points.length > 0) {
@@ -255,30 +286,32 @@ export function buildMovementLayer(
     });
 
     // ── label requests ──
-    const text = wrapLabel(trainLabelText(train), config.trainLabels.wrapAt, config.trainLabels.maxLines);
+    const text = [
+      ...wrapLabel(trainLabelText(train), config.trainLabels.wrapAt, config.trainLabels.maxLines),
+      ...(showCrewOnLabel ? item.crewLines : []),
+    ];
     const width = Math.max(...text.map((l) => l.length)) * labelFont * CHAR_WIDTH + 2 * LABEL_PADDING;
     const height = text.length * labelFont * LINE_HEIGHT + 2 * LABEL_PADDING;
     const startPoint = first ?? forecast.points[0];
+    const label = { width, height, item, lines: text };
     if (startPoint) {
       labelRequests.push({
+        ...label,
         id: `${id}:start`,
         anchorX: startPoint.x,
         anchorY: startPoint.y,
-        width,
-        height,
-        item,
-        lines: text,
+        blinks: false,
       });
     }
-    if (options.showLastTrainLabel && last && actual.points.length >= 2) {
+    // The floating (end) label: shown by preference, and always for crew over duty so its blink
+    // warning (manual §11.1) can't be switched off with the label.
+    if ((options.showLastTrainLabel || item.crewOverDuty) && last && actual.points.length >= 2) {
       labelRequests.push({
+        ...label,
         id: `${id}:end`,
         anchorX: last.x,
         anchorY: last.y,
-        width,
-        height,
-        item,
-        lines: text,
+        blinks: item.crewOverDuty,
       });
     }
   }
@@ -290,6 +323,7 @@ export function buildMovementLayer(
     const request = byId.get(placed.id);
     if (!request) continue;
     const colour = request.item.train.colour;
+    const opacity = request.blinks && blinkOff ? m.blinkOffOpacity : 1;
     if (placed.displaced) {
       labels.push({
         kind: 'line',
@@ -314,7 +348,8 @@ export function buildMovementLayer(
         height: placed.height,
         fill: m.labelBackground,
         stroke: colour,
-        strokeWidth: m.labelBorderWidth,
+        strokeWidth: request.blinks ? m.labelBorderWidth * 2 : m.labelBorderWidth,
+        opacity,
       },
       {
         kind: 'text',
@@ -328,11 +363,13 @@ export function buildMovementLayer(
         fontSize: labelFont,
         fontFamily: m.labelFontFamily,
         lineHeight: LINE_HEIGHT,
+        opacity,
       },
     );
   }
 
   return [
+    { id: 'train-gps', clip, items: glow },
     { id: 'train-lines', clip, items: lines },
     { id: 'train-points', clip, items: points },
     { id: 'train-figures', clip, items: figures },

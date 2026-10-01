@@ -48,6 +48,9 @@ export interface LinePrimitive {
   opacity?: number;
   lineCap?: 'butt' | 'round';
   lineJoin?: 'miter' | 'round';
+  /** Close the path and fill it (polygons, e.g. caution icons). */
+  closed?: boolean;
+  fill?: string;
 }
 
 export type TextAlign = 'left' | 'center' | 'right';
@@ -68,6 +71,7 @@ export interface TextPrimitive {
   baseline: TextBaseline;
   /** Line height multiplier for multi-line text (lines separated by "\n"). */
   lineHeight?: number;
+  opacity?: number;
 }
 
 export type Primitive = RectPrimitive | CirclePrimitive | SegmentsPrimitive | LinePrimitive | TextPrimitive;
@@ -89,10 +93,11 @@ export interface PrimitiveGroup {
  * Layer names map to renderer layers, bottom to top. Hover/selection lives only in `interaction`
  * so pointer movement never redraws the rest.
  */
-export type RenderLayerName = 'background' | 'movement' | 'axes' | 'interaction';
+export type RenderLayerName = 'background' | 'infrastructure' | 'movement' | 'axes' | 'interaction';
 
 export const RENDER_LAYER_ORDER: readonly RenderLayerName[] = [
   'background',
+  'infrastructure',
   'movement',
   'axes',
   'interaction',

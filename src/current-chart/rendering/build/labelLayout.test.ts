@@ -38,6 +38,10 @@ describe('wrapLabel', () => {
     expect(wrapLabel('ABCDEFGHIJKLMN', 10, 3)).toEqual(['ABCDEFGHIJ', 'KLMN']);
   });
 
+  it('does not leave a tiny tail on its own line', () => {
+    expect(wrapLabel('HERCULES-2-', 10, 3)).toEqual(['HERCULES-2-']);
+  });
+
   it('truncates beyond the line limit', () => {
     expect(wrapLabel('AAAA BBBB CCCC DDDD', 4, 2)).toEqual(['AAAA', 'BBB…']);
   });

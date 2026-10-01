@@ -13,6 +13,12 @@ export function formatIstTime(ms: EpochMs, withSeconds = false): string {
   return withSeconds ? `${hm}:${pad(c.second)}` : hm;
 }
 
+/** "21-09-2026 00:25" (IST). */
+export function formatIstDateTime(ms: EpochMs): string {
+  const c = istClock(ms);
+  return `${pad(c.day)}-${pad(c.month)}-${c.year} ${formatIstTime(ms)}`;
+}
+
 /** Label shown on the chart: the train number, or the name when there is no number. */
 export function trainLabelText(train: Train): string {
   return train.number ?? train.name;

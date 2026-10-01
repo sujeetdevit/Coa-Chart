@@ -1,6 +1,6 @@
 import type { TrainScene, TrainSceneItem } from '../../application/trainScene';
 import type { ChartTheme } from '../../configuration/chartTheme';
-import type { CurrentChartEngine } from '../../engine';
+import type { CurrentChartEngine, Rect } from '../../engine';
 import type { Primitive, PrimitiveGroup } from '../types';
 
 export interface ChartHover {
@@ -44,6 +44,8 @@ export function buildInteractionLayer(
   hover: ChartHover | undefined,
   selectedTrainId: string | undefined,
   theme: ChartTheme,
+  /** Hovered overlay item (block, icon, box, remark), in stage coordinates. */
+  overlayRect?: Rect,
 ): PrimitiveGroup[] {
   const { plot } = engine.getChartBounds();
   const ox = plot.x;
@@ -71,7 +73,24 @@ export function buildInteractionLayer(
     });
   }
 
+  const outline: Primitive[] = overlayRect
+    ? [
+        {
+          kind: 'rect',
+          id: 'hov-overlay',
+          x: overlayRect.x - 1,
+          y: overlayRect.y - 1,
+          width: overlayRect.width + 2,
+          height: overlayRect.height + 2,
+          fill: 'transparent',
+          stroke: t.overlayOutline,
+          strokeWidth: 1.5,
+        },
+      ]
+    : [];
+
   return [
     { id: 'highlights', clip: { x: plot.x, y: plot.y, width: plot.width, height: plot.height }, items },
+    { id: 'overlay-outline', items: outline },
   ];
 }

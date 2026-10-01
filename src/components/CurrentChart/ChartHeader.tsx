@@ -2,6 +2,12 @@ import type { ChartDisplayOptions } from '../../current-chart/application/displa
 import { istClock, type CurrentChartModel, type EpochMs, type TimeRange } from '../../current-chart/domain';
 
 const TOGGLES: { key: keyof ChartDisplayOptions; label: string; title: string }[] = [
+  { key: 'showCrew', label: 'Crew', title: 'Crew details on the train label' },
+  {
+    key: 'highlightGps',
+    label: 'GPS Loco',
+    title: 'Highlight GPS-loco enabled trains (RTIS / REMLOT reported)',
+  },
   { key: 'showGainLoss', label: 'Gain/Loss', title: 'Detention in red, gain in green' },
   { key: 'showSpeed', label: 'Speed', title: 'Speed at each departure' },
   {

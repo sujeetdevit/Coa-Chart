@@ -1,9 +1,14 @@
 /**
  * Visual constants for the Current Chart. Colours stated by the manual are marked; the rest are
- * presentation choices. Renderers and the render-model builder read from here, never hard-code.
+ * presentation choices. Renderers and the render-model builders read from here, never hard-code.
  */
 export interface ChartTheme {
-  /** Space around the plot for time labels (top/bottom) and station names (left/right, km on the right). */
+  /**
+   * Column widths around the plot. Right of the plot, left to right (manual screenshots):
+   * station names + km, caution icons, unusual icons, line occupancy.
+   */
+  layout: ChartLayout;
+  /** Derived from `layout`: space around the plot. */
   margins: { top: number; right: number; bottom: number; left: number };
   /** Grid density limits used when zoomed out. */
   tickSpacing: { minLinePx: number; minLabelPx: number };
@@ -40,12 +45,26 @@ export interface ChartTheme {
     lineDash: number[];
   };
   movement: MovementTheme;
+  overlays: OverlayTheme;
   interaction: {
     hoverWidth: number;
     hoverOpacity: number;
     selectedWidth: number;
     selectedOpacity: number;
+    overlayOutline: string;
   };
+}
+
+export interface ChartLayout {
+  top: number;
+  bottom: number;
+  left: number;
+  stationColumn: number;
+  cautionColumn: number;
+  unusualColumn: number;
+  occupancyColumn: number;
+  panelBackground: string;
+  panelDivider: string;
 }
 
 export interface MovementTheme {
@@ -74,10 +93,89 @@ export interface MovementTheme {
   labelBackground: string;
   labelBorderWidth: number;
   arrowSize: number;
+  /** Opacity of a blinking label in its "off" phase. */
+  blinkOffOpacity: number;
+  /** GPS Loco checkbox: glow behind GPS-enabled trains. */
+  gpsGlow: string;
+  gpsGlowWidth: number;
+  /** Manual legend: TSL movement is a purple dotted line. */
+  tsl: string;
+  tslDash: number[];
+  tslWidth: number;
+}
+
+export interface OverlayTheme {
+  /**
+   * Manual: block colour by department — dark red Engg open line, dark green signal, black track
+   * (traction) distribution, dark blue integration, dark pink Engg const. Keys are department
+   * codes upper-cased with spaces, dots and hyphens removed.
+   */
+  blockDepartments: Record<string, string>;
+  /** Departments the manual gives no colour for. */
+  blockDefault: string;
+  blockFillOpacity: number;
+  /** Manual: the red part of the block is the burst period. */
+  blockBurst: string;
+  blockBurstOpacity: number;
+  /** Manual: dark red line = actual start (AST); cyan line = actual end (AET). */
+  blockAst: string;
+  blockAet: string;
+  blockEdgeWidth: number;
+  /** Manual: block reason in black text. */
+  blockReason: string;
+  blockReasonSize: number;
+  /** A station block covers this many pixels above and below the station line. */
+  stationBlockHalfHeight: number;
+  /** Manual icons: star = both directions / single line, triangles = UP / DN line. */
+  cautionBoth: string;
+  cautionUp: string;
+  cautionDown: string;
+  cautionIconSize: number;
+  cautionTextSize: number;
+  cautionText: string;
+  /** Manual: Signal red, Engineering pink, Electrical green, Tele blue, ACF brown. */
+  unusual: Record<string, string>;
+  unusualDefault: string;
+  unusualIconSize: number;
+  /** Manual: line occupancy red = occupied, green = free, light blue = nominated. */
+  occupied: string;
+  free: string;
+  nominated: string;
+  occupancyBoxWidth: number;
+  occupancyBoxHeight: number;
+  occupancyText: string;
+  occupancyTextSize: number;
+  remarkMarker: string;
+  remarkMarkerText: string;
+  /** Manual: user (chart) remarks in red at the bottom of the chart. */
+  chartRemark: string;
+  chartRemarkSize: number;
+}
+
+const layout: ChartLayout = {
+  top: 24,
+  bottom: 24,
+  left: 60,
+  stationColumn: 112,
+  cautionColumn: 90,
+  unusualColumn: 32,
+  occupancyColumn: 190,
+  panelBackground: '#f3f3f3',
+  panelDivider: '#c8c8c8',
+};
+
+export function marginsFor(l: ChartLayout): ChartTheme['margins'] {
+  return {
+    top: l.top,
+    bottom: l.bottom,
+    left: l.left,
+    right: l.stationColumn + l.cautionColumn + l.unusualColumn + l.occupancyColumn,
+  };
 }
 
 export const DEFAULT_CHART_THEME: ChartTheme = {
-  margins: { top: 24, right: 112, bottom: 24, left: 60 },
+  layout,
+  margins: marginsFor(layout),
   tickSpacing: { minLinePx: 5, minLabelPx: 26 },
   fontFamily: 'Segoe UI, Roboto, Arial, sans-serif',
   plotBackground: '#ffffff',
@@ -125,11 +223,69 @@ export const DEFAULT_CHART_THEME: ChartTheme = {
     labelBackground: 'rgba(255,255,255,0.85)',
     labelBorderWidth: 0.75,
     arrowSize: 7,
+    blinkOffOpacity: 0.12,
+    gpsGlow: '#ffc400',
+    gpsGlowWidth: 7,
+    tsl: '#8a2be2',
+    tslDash: [2, 3],
+    tslWidth: 2.5,
+  },
+  overlays: {
+    blockDepartments: {
+      ENGGOPENLINE: '#8b0000',
+      SIGNAL: '#006400',
+      TRACTIONDISTR: '#000000',
+      TRACKDISTRIBUTION: '#000000',
+      INTEGRATION: '#00008b',
+      ENGGCONST: '#c71585',
+    },
+    blockDefault: '#696969',
+    blockFillOpacity: 0.22,
+    blockBurst: '#ff0000',
+    blockBurstOpacity: 0.4,
+    blockAst: '#8b0000',
+    blockAet: '#00b7c3',
+    blockEdgeWidth: 2,
+    blockReason: '#000000',
+    blockReasonSize: 10,
+    stationBlockHalfHeight: 5,
+    cautionBoth: '#2e9e2e',
+    cautionUp: '#1f3fd1',
+    cautionDown: '#2e9e2e',
+    cautionIconSize: 11,
+    cautionTextSize: 8,
+    cautionText: '#000000',
+    unusual: {
+      SIGG: '#ff0000',
+      ENGG: '#ff00ff',
+      ELEC: '#2e8b57',
+      TELE: '#0000ff',
+      ACF: '#a52a2a',
+    },
+    unusualDefault: '#555555',
+    unusualIconSize: 9,
+    occupied: '#e02020',
+    free: '#2ea043',
+    nominated: '#5ec8f2',
+    occupancyBoxWidth: 19,
+    occupancyBoxHeight: 11,
+    occupancyText: '#ffffff',
+    occupancyTextSize: 8,
+    remarkMarker: '#d00000',
+    remarkMarkerText: '#ffffff',
+    chartRemark: '#d00000',
+    chartRemarkSize: 11,
   },
   interaction: {
     hoverWidth: 5,
     hoverOpacity: 0.3,
     selectedWidth: 6,
     selectedOpacity: 0.45,
+    overlayOutline: '#1a73e8',
   },
 };
+
+/** Normalised key for department code lookups: "ENGG-OPEN LINE" → "ENGGOPENLINE". */
+export function departmentKey(code: string): string {
+  return code.toUpperCase().replace(/[\s.\-_/]/g, '');
+}

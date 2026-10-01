@@ -25,6 +25,21 @@ export interface ChartConfig {
   trainLabels: TrainLabelConfig;
   forecast: ForecastDisplayConfig;
   dwellLanes: DwellLaneConfig;
+  crew: CrewDisplayConfig;
+}
+
+/** Manual §11.1 Crew checkbox and §3.1.1 "Chart View Crew Details". */
+export interface CrewDisplayConfig {
+  /** "Chart View Crew Details": crew may be shown on the train label. Default Y. */
+  chartViewCrewDetails: boolean;
+  /** Duty hours after which the train's floating label blinks. Manual: 07 hours (configurable). */
+  dutyAlertHours: number;
+  /** Manual: blinks every 01 minute (configurable) … */
+  blinkIntervalSeconds: number;
+  /** … for a period of 20 seconds. */
+  blinkDurationSeconds: number;
+  /** On/off speed of the blink itself (not specified by the manual). */
+  blinkToggleMs: number;
 }
 
 export interface TrainLabelConfig {
@@ -112,5 +127,12 @@ export const DEFAULT_CHART_CONFIG: ChartConfig = {
   dwellLanes: {
     minDwellMinutes: 2,
     laneOffsetPx: 3,
+  },
+  crew: {
+    chartViewCrewDetails: true,
+    dutyAlertHours: 7,
+    blinkIntervalSeconds: 60,
+    blinkDurationSeconds: 20,
+    blinkToggleMs: 500,
   },
 };

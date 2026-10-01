@@ -48,7 +48,7 @@ function model(trains: Train[]): CurrentChartModel {
 }
 
 function build(trains: Train[], options: Partial<ChartDisplayOptions> = {}): Primitive[] {
-  const scene = buildTrainScene(engine, model(trains), new Map());
+  const scene = buildTrainScene(engine, model(trains), new Map(), config);
   const groups: PrimitiveGroup[] = buildMovementLayer(
     scene,
     engine,
@@ -171,6 +171,80 @@ describe('buildMovementLayer', () => {
     });
     // Starts at the last actual vertex (CCC arrival) and continues to DDD.
     expect(forecast?.kind === 'line' && forecast.points.length).toBe(6);
+  });
+
+  describe('crew', () => {
+    const crewed: Train = {
+      ...running,
+      crew: [{ name: 'MOHIT', type: 'DR', signOn: min(-500), minutesOnDuty: 480 }],
+    };
+
+    it('adds crew lines to the label only when the Crew checkbox is on', () => {
+      const off = build([crewed]).find((p) => p.id === 'lt:T1:start');
+      const on = build([crewed], { showCrew: true }).find((p) => p.id === 'lt:T1:start');
+      expect(off).toMatchObject({ text: '12345' });
+      expect(on).toMatchObject({ text: '12345\nDR MOHIT' });
+    });
+
+    it('always shows the floating label of an over-duty train and dims it in the blink-off phase', () => {
+      const items = build([crewed]); // last labels are off by default
+      const end = items.find((p) => p.id === 'lt:T1:end');
+      expect(end).toMatchObject({ opacity: 1 });
+
+      const groups = buildMovementLayer(
+        buildTrainScene(engine, model([crewed]), new Map(), config),
+        engine,
+        defaultDisplayOptions(config),
+        config,
+        theme,
+        true,
+      );
+      const dimmed = groups.flatMap((g) => g.items).find((p) => p.id === 'lt:T1:end');
+      expect(dimmed).toMatchObject({ opacity: theme.movement.blinkOffOpacity });
+      // The start label never blinks.
+      expect(groups.flatMap((g) => g.items).find((p) => p.id === 'lt:T1:start')).toMatchObject({
+        opacity: 1,
+      });
+    });
+  });
+
+  it('glows GPS-enabled trains only when GPS Loco is on', () => {
+    const gps: Train = {
+      ...running,
+      events: running.events.map((e) => ({ ...e, departureSource: 'RTIS' as const })),
+    };
+    expect(build([gps]).some((p) => p.id === 'gps:T1')).toBe(false);
+    expect(build([gps], { highlightGps: true }).find((p) => p.id === 'gps:T1')).toMatchObject({
+      stroke: theme.movement.gpsGlow,
+    });
+    expect(build([running], { highlightGps: true }).some((p) => p.id === 'gps:T1')).toBe(false);
+  });
+
+  it('overdraws segments run under TSL as a purple dotted line', () => {
+    const scene = buildTrainScene(
+      engine,
+      {
+        ...model([running]),
+        tsl: [
+          {
+            sectionId: 1,
+            fromStationCode: 'AAA',
+            toStationCode: 'CCC',
+            line: 'DN',
+            introducedAt: min(0),
+            reason: 'TEST',
+          },
+        ],
+      },
+      new Map(),
+      config,
+    );
+    const items = buildMovementLayer(scene, engine, defaultDisplayOptions(config), config, theme).flatMap(
+      (g) => g.items,
+    );
+    const tsl = items.filter((p) => p.id.startsWith('tsl:T1'));
+    expect(tsl).toHaveLength(2); // AAA→BBB and BBB→CCC (the BBB dwell is not a block section)
+    expect(tsl[0]).toMatchObject({ stroke: theme.movement.tsl, dash: theme.movement.tslDash });
   });
 
   it('leaves out trains entirely outside the visible window', () => {
