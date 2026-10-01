@@ -23,10 +23,22 @@ src/current-chart/
   domain/      framework-free model types
   application/ filters, selection, freeze, refresh, configuration use
   engine/      chart mathematics: scales, viewport, geometry, hit testing
+  interactions/ gestures → viewport changes
   rendering/
-    types/     renderer-independent render model
+    types/     renderer-independent render model and renderer interface
+    build/     engine state → render model
     konva/     KonvaRenderer, the only renderer
 ```
+
+## Chart controls
+
+| Input                                     | Effect                          |
+| ----------------------------------------- | ------------------------------- |
+| Wheel over the plot or time labels        | Zoom time about the pointer     |
+| Wheel over station names, or Ctrl+wheel   | Zoom stations about the pointer |
+| Shift+wheel, or horizontal trackpad swipe | Pan time                        |
+| Drag                                      | Pan                             |
+| Double-click, or **Now**                  | Back to the initial window      |
 
 ESLint enforces the boundaries: Konva may only be imported under `rendering/konva`, and `domain`, `engine` and `rendering/types` may not import React, Konva or adapters.
 

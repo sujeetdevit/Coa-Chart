@@ -1,7 +1,4 @@
-import type { EpochMs } from '../../domain';
-
-/** COA timestamps are Indian Standard Time wall-clock values (UTC+05:30, no DST). */
-const IST_OFFSET_MS = (5 * 60 + 30) * 60_000;
+import { IST_OFFSET_MS, type EpochMs } from '../../domain';
 
 const PATTERN = /^(\d{1,2})-(\d{1,2})-(\d{2}|\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
 

@@ -119,18 +119,24 @@ describe('CurrentChartEngine — zoom and pan', () => {
     );
   });
 
-  it('keeps the left-edge time and zoom on resize', () => {
-    // Zoomed at the left edge: 90 min visible, so a wider plot (141 min) still fits the extent.
-    const zoomed = engine.zoomAt({ x: 0, y: 200 }, 2);
+  it('keeps the visible time range on resize, stretching it to the new width', () => {
+    const zoomed = engine.zoomAt({ x: 300, y: 200 }, 2);
     const resized = zoomed.resize({ width: 1500, height: 440 });
     expect(resized.getChartBounds().plot.width).toBe(1380);
-    expect(resized.viewport.time).toEqual(zoomed.viewport.time);
+    const before = zoomed.getVisibleTimeRange();
+    const after = resized.getVisibleTimeRange();
+    expect(after.start).toBeCloseTo(before.start, 3);
+    expect(after.end).toBeCloseTo(before.end, 3);
   });
 
-  it('re-clamps on resize when the wider view would run past the extent', () => {
-    const atEnd = engine.zoomAt({ x: 880, y: 200 }, 2); // right edge pinned to the extent end
-    const resized = atEnd.resize({ width: 1500, height: 440 });
-    expect(resized.getVisibleTimeRange().end).toBeCloseTo(options.timeExtent.end, 3);
+  it('keeps the vertical zoom and top station on resize', () => {
+    const zoomed = engine.zoomAt({ x: 0, y: 200 }, 1, 2);
+    const resized = zoomed.resize({ width: 1000, height: 640 }); // plot height 400 → 600
+    expect(resized.viewport.pxPerUnit).toBeCloseTo(zoomed.viewport.pxPerUnit * 1.5, 9);
+    expect(resized.yToStation(0)?.id).toBe(zoomed.yToStation(0)?.id);
+    expect(resized.getVisibleStations().map((s) => s.station.id)).toEqual(
+      zoomed.getVisibleStations().map((s) => s.station.id),
+    );
   });
 
   it('fits a new window', () => {

@@ -31,9 +31,14 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
+          // Package names only (`paths`), so the app may still import the rendering/konva factory.
+          paths: ['konva', 'react-konva'].map((name) => ({
+            name,
+            message: 'Konva may only be imported inside src/current-chart/rendering/konva.',
+          })),
           patterns: [
             {
-              group: ['konva', 'konva/*', 'react-konva'],
+              regex: '^konva/',
               message: 'Konva may only be imported inside src/current-chart/rendering/konva.',
             },
           ],

@@ -1,7 +1,16 @@
 import type { ChartConfig } from '../configuration/chartConfig';
-import type { Board, EpochMs, Station, StationId, TimeRange, Train } from '../domain';
+import {
+  MS_PER_MINUTE,
+  type Board,
+  type EpochMs,
+  type Station,
+  type StationId,
+  type TimeRange,
+  type Train,
+} from '../domain';
 import { buildStationLayout, nearestPositionIndex, type StationLayout } from './stationLayout';
 import { timeToX, xToTime } from './timeScale';
+import { timeTicks, type TickSpacing, type TimeTick } from './timeTicks';
 import { actualPathVertices, type PathPointKind } from './trainGeometry';
 import type { Margins, Point, Rect, Size } from './types';
 import {
@@ -151,6 +160,16 @@ export class CurrentChartEngine {
     return this.options.now;
   }
 
+  /** Grid ticks for the visible time range, with x positions. */
+  getTimeTicks(spacing: TickSpacing): (TimeTick & { x: number })[] {
+    return timeTicks(
+      this.getVisibleTimeRange(),
+      this.viewport.time.pxPerMinute,
+      this.options.config.timeGridMinutes,
+      spacing,
+    ).map((tick) => ({ ...tick, x: this.timeToX(tick.time) }));
+  }
+
   // ── geometry ──────────────────────────────────────────────────────────
 
   /** Actual-movement polyline of a train in plot coordinates. Off-board vertices are skipped. */
@@ -182,9 +201,25 @@ export class CurrentChartEngine {
     return this.withViewport(fitViewport(window, this.bounds));
   }
 
-  /** New stage size; keeps the left edge time and the zoom level. */
+  /**
+   * New stage size. Keeps the visible time range (it stretches to the new width) and the
+   * vertical zoom relative to fit-to-height, with the same station at the top edge.
+   */
   resize(stage: Size): CurrentChartEngine {
-    return new CurrentChartEngine({ ...this.options, stage }, this.layout, this.viewport);
+    const visible = this.getVisibleTimeRange();
+    const oldPlot = this.bounds.plot;
+    const newPlot = plotSize(stage, this.options.margins);
+    const scale = this.layout.totalUnits > 0 ? newPlot.height / oldPlot.height : 1;
+    const pxPerUnit = this.viewport.pxPerUnit * scale;
+    const viewport: Viewport = {
+      time: {
+        start: visible.start,
+        pxPerMinute: (newPlot.width / Math.max(1, visible.end - visible.start)) * MS_PER_MINUTE,
+      },
+      pxPerUnit,
+      scrollY: this.viewport.scrollY * scale,
+    };
+    return new CurrentChartEngine({ ...this.options, stage }, this.layout, viewport);
   }
 
   withViewport(viewport: Viewport): CurrentChartEngine {

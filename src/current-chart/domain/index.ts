@@ -10,5 +10,5 @@ export type * from './remarks';
 export type * from './train';
 export type * from './unsupplied';
 export type { EpochMs, TimeRange } from './time';
-export { MS_PER_HOUR, MS_PER_MINUTE } from './time';
+export { IST_OFFSET_MS, MS_PER_HOUR, MS_PER_MINUTE, istClock } from './time';
 export { stationId } from './board';
