@@ -1,0 +1,39 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  padding: 16px 24px;
+}
+
+.summary {
+  border-collapse: collapse;
+}
+
+.summary th,
+.summary td {
+  border: 1px solid #d0d0d0;
+  padding: 4px 12px;
+  text-align: left;
+}
+
+.summary td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.error {
+  color: #b00020;
+}
