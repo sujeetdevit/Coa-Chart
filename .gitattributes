@@ -1,0 +1,5 @@
+# Normalise text files to LF in the repository.
+* text=auto eol=lf
+
+# Supplied data snapshots are stored exactly as received.
+src/data/*.json -text
