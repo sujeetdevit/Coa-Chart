@@ -52,6 +52,8 @@ export default tseslint.config(
       'src/current-chart/engine/**/*.ts',
       'src/current-chart/rendering/types/**/*.ts',
     ],
+    // Tests may build fixtures through the adapters.
+    ignores: ['**/*.test.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -61,7 +63,10 @@ export default tseslint.config(
               group: ['react', 'react-dom', 'konva', 'react-konva'],
               message: 'This layer must not depend on React or Konva.',
             },
-            { group: ['**/adapters/**'], message: 'This layer must not depend on data adapters.' },
+            {
+              group: ['**/adapters', '**/adapters/**'],
+              message: 'This layer must not depend on data adapters.',
+            },
           ],
         },
       ],

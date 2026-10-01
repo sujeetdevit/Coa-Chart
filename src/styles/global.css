@@ -37,3 +37,11 @@ body {
 .error {
   color: #b00020;
 }
+
+.diag-warning {
+  color: #8a5300;
+}
+
+.diag-error {
+  color: #b00020;
+}

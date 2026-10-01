@@ -8,7 +8,15 @@ export interface StationLine {
   type: StationLineType;
 }
 
+/** Stations are unique per section, not per code: a code may appear in more than one section. */
+export type StationId = `${number}:${string}`;
+
+export function stationId(sectionId: number, code: string): StationId {
+  return `${sectionId}:${code}`;
+}
+
 export interface Station {
+  id: StationId;
   code: string;
   sectionId: number;
   /** Position within the board's display order (0-based). */
