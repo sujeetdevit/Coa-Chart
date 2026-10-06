@@ -31,5 +31,7 @@ export interface ChartRenderer {
   /** Draws the model synchronously, updating existing nodes in place. Call at most once per frame. */
   render(model: ChartRenderModel): void;
   onGesture(handler: (gesture: ChartGesture) => void): () => void;
+  /** The chart as currently drawn, as a PNG data URL. `pixelRatio` 2 doubles the resolution. */
+  toImage(pixelRatio?: number): string;
   destroy(): void;
 }

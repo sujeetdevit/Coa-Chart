@@ -22,6 +22,13 @@ export interface NormalizeOptions {
 /** Validates a raw snapshot and converts it into the Current Chart domain model. */
 export function normalizeSnapshot(raw: RawChartSnapshot, options: NormalizeOptions = {}): CurrentChartModel {
   const { snapshot, diagnostics } = validateSnapshot(raw);
+  for (const [source, reason] of Object.entries(raw.loadErrors ?? {})) {
+    diagnostics.push({
+      source,
+      severity: 'error',
+      message: `Not loaded, so the chart is shown without it. ${reason}`,
+    });
+  }
 
   const board = adaptBoard(snapshot.boardDetails, snapshot.stationLines, diagnostics);
   // BoardDetails carries no board ID; the caution and remark rows do.

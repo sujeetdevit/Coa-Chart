@@ -1,9 +1,9 @@
 // Test-only loader for the supplied JSON snapshot (reads from disk; the app fetches over HTTP).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { RawChartSnapshot } from '../current-chart/adapters';
+import type { DatasetKey, RawChartSnapshot } from '../current-chart/adapters';
 
-const files: Record<keyof RawChartSnapshot, string> = {
+const files: Record<DatasetKey, string> = {
   movement: 'movement.json',
   boardDetails: 'BoardDetails.json',
   stationLines: 'StationLine.json',

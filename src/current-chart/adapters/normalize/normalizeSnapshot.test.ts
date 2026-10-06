@@ -174,3 +174,36 @@ describe('normalizeSnapshot with the supplied JSON', () => {
     expect(model.epenMessages).toEqual([]);
   });
 });
+
+describe('normalizeSnapshot when a dataset could not be loaded', () => {
+  const raw = loadSuppliedSnapshot();
+  const model = normalizeSnapshot({
+    ...raw,
+    crew: [],
+    cautions: [],
+    loadErrors: { crew: 'Failed to load crew: HTTP 500', cautions: 'Failed to load cautions: HTTP 404' },
+  });
+
+  it('still builds the chart from the datasets that did load', () => {
+    expect(model.board.stations).toHaveLength(32);
+    expect(model.trains).toHaveLength(196);
+    expect(model.blocks.length).toBeGreaterThan(0);
+    expect(model.cautions).toEqual([]);
+    expect(model.trains.every((t) => t.crew.length === 0)).toBe(true);
+  });
+
+  it('reports each missing dataset as an error with the reason', () => {
+    expect(model.diagnostics.filter((d) => d.severity === 'error')).toEqual([
+      {
+        source: 'crew',
+        severity: 'error',
+        message: 'Not loaded, so the chart is shown without it. Failed to load crew: HTTP 500',
+      },
+      {
+        source: 'cautions',
+        severity: 'error',
+        message: 'Not loaded, so the chart is shown without it. Failed to load cautions: HTTP 404',
+      },
+    ]);
+  });
+});

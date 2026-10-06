@@ -26,6 +26,18 @@ export interface ChartConfig {
   forecast: ForecastDisplayConfig;
   dwellLanes: DwellLaneConfig;
   crew: CrewDisplayConfig;
+  refresh: RefreshConfig;
+}
+
+/** Manual §3.1 refresh preferences. */
+export interface RefreshConfig {
+  /** "Auto Refresh Enable". Default N. */
+  autoRefreshEnabled: boolean;
+  /**
+   * "Chart Idle Refresh Time": seconds between automatic refreshes. The manual gives no default;
+   * 180 follows the legacy web chart, which re-fetched every 3 minutes.
+   */
+  intervalSeconds: number;
 }
 
 /** Manual §11.1 Crew checkbox and §3.1.1 "Chart View Crew Details". */
@@ -140,5 +152,9 @@ export const DEFAULT_CHART_CONFIG: ChartConfig = {
     blinkIntervalSeconds: 60,
     blinkDurationSeconds: 20,
     blinkToggleMs: 500,
+  },
+  refresh: {
+    autoRefreshEnabled: false,
+    intervalSeconds: 180,
   },
 };

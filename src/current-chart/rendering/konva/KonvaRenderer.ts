@@ -1,34 +1,31 @@
-import Konva from 'konva';
+import Konva from 'konva/lib/Core';
 import {
   RENDER_LAYER_ORDER,
   type ChartGesture,
   type ChartRenderModel,
   type ChartRenderer,
-  type CirclePrimitive,
-  type LinePrimitive,
   type Primitive,
   type PrimitiveGroup,
-  type RectPrimitive,
   type RenderLayerName,
-  type SegmentsPrimitive,
-  type TextPrimitive,
 } from '../types';
-
-type Shape = Konva.Rect | Konva.Circle | Konva.Line | Konva.Text | Konva.Shape;
+import { paintPrimitives } from './paintPrimitives';
 
 interface GroupState {
+  /** Carries the clip. */
   group: Konva.Group;
-  nodes: Map<string, { kind: Primitive['kind']; node: Shape }>;
+  /** Paints every primitive of the group in one pass. */
+  shape: Konva.Shape;
+  items: readonly Primitive[];
 }
 
 /** Pixels of pointer travel before a press becomes a drag (so clicks stay clicks). */
 const DRAG_THRESHOLD = 3;
 
 /**
- * Draws a ChartRenderModel with Konva. Nodes are keyed by primitive id and updated in place;
- * a layer whose group array is unchanged from the previous model is neither reconciled nor
- * redrawn. Hit detection is done by the chart engine, so no shape listens for events and Konva
- * skips its hit-canvas work entirely.
+ * Draws a ChartRenderModel with Konva: a Konva layer per render layer, a clipped Konva group per
+ * primitive group, and one custom shape per group that paints its primitives directly. A layer
+ * whose group array is unchanged from the previous model is not redrawn. Hit detection is done
+ * by the chart engine, so no shape listens for events and Konva skips its hit-canvas work.
  */
 export class KonvaRenderer implements ChartRenderer {
   private stage: Konva.Stage | undefined;
@@ -75,6 +72,10 @@ export class KonvaRenderer implements ChartRenderer {
     return () => this.handlers.delete(handler);
   }
 
+  toImage(pixelRatio = 1): string {
+    return this.stage?.toDataURL({ pixelRatio, mimeType: 'image/png' }) ?? '';
+  }
+
   destroy(): void {
     for (const fn of this.cleanup.splice(0)) fn();
     this.handlers.clear();
@@ -98,14 +99,14 @@ export class KonvaRenderer implements ChartRenderer {
       seen.add(spec.id);
       let state = states.get(spec.id);
       if (!state) {
-        state = { group: new Konva.Group({ listening: false }), nodes: new Map() };
+        state = createGroupState();
         states.set(spec.id, state);
         layer.add(state.group);
         orderChanged = true;
       }
       // A zero-size clip means "no clip" to Konva.
       state.group.clip(spec.clip ?? { x: 0, y: 0, width: 0, height: 0 });
-      reconcileGroup(state, spec.items);
+      state.items = spec.items;
     }
     for (const [id, state] of states) {
       if (!seen.has(id)) {
@@ -224,152 +225,15 @@ export class KonvaRenderer implements ChartRenderer {
   }
 }
 
-function reconcileGroup(state: GroupState, items: Primitive[]): void {
-  const seen = new Set<string>();
-  let orderChanged = false;
-  for (const item of items) {
-    seen.add(item.id);
-    let entry = state.nodes.get(item.id);
-    if (entry && entry.kind !== item.kind) {
-      entry.node.destroy();
-      entry = undefined;
-    }
-    if (!entry) {
-      entry = { kind: item.kind, node: createNode(item) };
-      state.nodes.set(item.id, entry);
-      state.group.add(entry.node);
-      orderChanged = true;
-    }
-    updateNode(entry.node, item);
-  }
-  for (const [id, entry] of state.nodes) {
-    if (!seen.has(id)) {
-      entry.node.destroy();
-      state.nodes.delete(id);
-    }
-  }
-  // Keep model order (later items on top) only when membership changed.
-  if (orderChanged) items.forEach((item) => state.nodes.get(item.id)?.node.moveToTop());
-}
-
-const BASE = { listening: false, perfectDrawEnabled: false } as const;
-
-function createNode(item: Primitive): Shape {
-  switch (item.kind) {
-    case 'rect':
-      return new Konva.Rect(BASE);
-    case 'circle':
-      return new Konva.Circle(BASE);
-    case 'line':
-      return new Konva.Line(BASE);
-    case 'text':
-      return new Konva.Text(BASE);
-    case 'segments':
-      return new Konva.Shape({ ...BASE, sceneFunc: drawSegments });
-  }
-}
-
-/** One path for many disjoint segments: far cheaper than a node per tick mark. */
-function drawSegments(context: Konva.Context, shape: Konva.Shape): void {
-  const points = shape.getAttr('points') as number[];
-  context.beginPath();
-  for (let i = 0; i + 3 < points.length; i += 4) {
-    context.moveTo(points[i] ?? 0, points[i + 1] ?? 0);
-    context.lineTo(points[i + 2] ?? 0, points[i + 3] ?? 0);
-  }
-  context.strokeShape(shape);
-}
-
-function updateNode(node: Shape, item: Primitive): void {
-  switch (item.kind) {
-    case 'rect':
-      updateRect(node as Konva.Rect, item);
-      return;
-    case 'circle':
-      updateCircle(node as Konva.Circle, item);
-      return;
-    case 'line':
-      updateLine(node as Konva.Line, item);
-      return;
-    case 'text':
-      updateText(node as Konva.Text, item);
-      return;
-    case 'segments':
-      updateSegments(node as Konva.Shape, item);
-      return;
-  }
-}
-
-function updateRect(node: Konva.Rect, item: RectPrimitive): void {
-  node.setAttrs({
-    x: item.x,
-    y: item.y,
-    width: item.width,
-    height: item.height,
-    fill: item.fill,
-    stroke: item.stroke ?? 'transparent',
-    strokeWidth: item.strokeWidth ?? 0,
-    strokeEnabled: item.stroke !== undefined,
-    opacity: item.opacity ?? 1,
+function createGroupState(): GroupState {
+  const state: GroupState = {
+    group: new Konva.Group({ listening: false }),
+    shape: new Konva.Shape({ listening: false, perfectDrawEnabled: false }),
+    items: [],
+  };
+  state.shape.sceneFunc((context) => {
+    paintPrimitives(context._context, state.items);
   });
-}
-
-function updateCircle(node: Konva.Circle, item: CirclePrimitive): void {
-  node.setAttrs({
-    x: item.x,
-    y: item.y,
-    radius: item.radius,
-    fill: item.fill ?? 'transparent',
-    fillEnabled: item.fill !== undefined,
-    stroke: item.stroke ?? 'transparent',
-    strokeWidth: item.strokeWidth ?? 0,
-    strokeEnabled: item.stroke !== undefined,
-    opacity: item.opacity ?? 1,
-  });
-}
-
-function updateLine(node: Konva.Line, item: LinePrimitive): void {
-  node.setAttrs({
-    points: item.points,
-    stroke: item.stroke,
-    strokeWidth: item.strokeWidth,
-    dash: item.dash ?? [],
-    dashEnabled: item.dash !== undefined,
-    opacity: item.opacity ?? 1,
-    lineCap: item.lineCap ?? 'butt',
-    lineJoin: item.lineJoin ?? 'miter',
-    closed: item.closed ?? false,
-    fill: item.fill ?? 'transparent',
-    fillEnabled: item.fill !== undefined,
-  });
-}
-
-function updateSegments(node: Konva.Shape, item: SegmentsPrimitive): void {
-  node.setAttrs({
-    points: item.points,
-    stroke: item.stroke,
-    strokeWidth: item.strokeWidth,
-    opacity: item.opacity ?? 1,
-  });
-}
-
-const ALIGN_FACTOR = { left: 0, center: 0.5, right: 1 } as const;
-const BASELINE_FACTOR = { top: 0, middle: 0.5, bottom: 1 } as const;
-
-function updateText(node: Konva.Text, item: TextPrimitive): void {
-  node.setAttrs({
-    text: item.text,
-    fill: item.fill,
-    fontSize: item.fontSize,
-    fontFamily: item.fontFamily,
-    fontStyle: item.bold ? 'bold' : 'normal',
-    lineHeight: item.lineHeight ?? 1,
-    opacity: item.opacity ?? 1,
-    align: item.align,
-    x: item.x,
-    y: item.y,
-  });
-  // Konva positions text by its top-left corner; shift so the anchor sits where requested.
-  node.offsetX(node.width() * ALIGN_FACTOR[item.align]);
-  node.offsetY(node.height() * BASELINE_FACTOR[item.baseline]);
+  state.group.add(state.shape);
+  return state;
 }

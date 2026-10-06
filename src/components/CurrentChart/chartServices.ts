@@ -8,3 +8,16 @@ export interface ChartServices {
   msm: MsmProvider;
   epen: EpenStore;
 }
+
+/** Data refresh status and controls shown in the chart header. */
+export interface ChartRefreshControls {
+  /** When the data shown was last confirmed with the source (clock time, ms). */
+  loadedAt: number;
+  refreshing: boolean;
+  /** Why the latest refresh failed, while the previous data is still shown. */
+  error?: string;
+  auto: boolean;
+  intervalSeconds: number;
+  onAutoChange: (auto: boolean) => void;
+  onRefresh: () => void;
+}

@@ -21,13 +21,13 @@ Discovery, decisions and open questions: [docs/phase-1-discovery.md](docs/phase-
 src/current-chart/
   adapters/    raw source payloads → validated rows → domain (JSON files now, HTTP API later)
   domain/      framework-free model types
-  application/ filters, selection, freeze, refresh, configuration use
+  application/ filters, selection, freeze, refresh, print options, configuration use
   engine/      chart mathematics: scales, viewport, geometry, hit testing
   interactions/ gestures → viewport changes
   rendering/
     types/     renderer-independent render model and renderer interface
     build/     engine state → render model
-    konva/     KonvaRenderer, the only renderer
+    konva/     KonvaRenderer, the only renderer (one painted shape per group of primitives)
 ```
 
 ## Chart controls
@@ -44,6 +44,52 @@ With **Zoom** ticked, drag a rectangle to zoom into it. With **MSM** ticked, cli
 train has run through. Right-click the chart for **Write Pad** (EPEN), **Message Show** and, over a
 train, a single-train forecast. In a manual forecast (tick **Manual**, then **MF**), drag a forecast
 point sideways to change its time.
+
+## Refresh, printing and errors
+
+**Refresh.** The header shows when the data was last checked. **Refresh** reloads it now; **Auto
+refresh** reloads it every 3 minutes (off by default, as in the manual). Automatic refreshes wait
+while the browser tab is hidden, and **Freeze** holds new data back until it is switched off. Data
+that has not changed is not redrawn.
+
+**Print.** **Print** opens the Print Chart form: shift start, shift hours, Speed, Gain/Loss, Crew,
+EPEN messages and the controller's name, with a preview. **Print** sends an A4 landscape page to the
+browser's print dialog; **Save PNG** saves the same picture.
+
+**Errors.**
+
+- One dataset fails to load (crew, loco, remarks, blocks, cautions or movement): the chart is drawn
+  without it and a red notice names the dataset and the reason.
+- `BoardDetails` or `StationLine` fails: there is no station axis to draw, so the load fails with
+  a **Try again** button.
+- A refresh fails: the data already on screen stays, with a "Refresh failed" badge.
+- A drawing error is caught and offers **Try again** instead of a blank page.
+
+### Connecting an API
+
+Data reaches the chart through one interface, `ChartDataSource` in
+`src/current-chart/adapters/types.ts`, and is chosen in one place, `src/app/App.tsx`.
+
+- If the API serves one JSON document per dataset in the same row shapes as the files in
+  `src/data/`, use `JsonFileDataSource` with the API's URLs. A URL can be a function of the query
+  (board and time range).
+- Otherwise implement `ChartDataSource.load()` and return the rows per dataset. Validation, the
+  adapters and the chart need no change.
+
+No API was supplied, so no endpoint, authentication or session handling is assumed.
+
+### Assumptions in this phase
+
+| Decision                                                                     | Basis                                         |
+| ---------------------------------------------------------------------------- | --------------------------------------------- |
+| Auto refresh off by default                                                  | Manual: Auto Refresh Enable, default N        |
+| 3-minute refresh interval                                                    | Legacy web chart; the manual gives no default |
+| Refresh pauses while the tab is hidden                                       | Not in the manual                             |
+| `BoardDetails` and `StationLine` are required, other datasets are not        | The chart cannot be drawn without stations    |
+| Print form starts with the period and options on screen                      | Not in the manual                             |
+| Printed page is A4 landscape                                                 | Not in the manual                             |
+| Controller name is typed in                                                  | No source for it was supplied                 |
+| Not done: movable labels on the printed chart, load summary, timed auto-save | Need details or data that were not supplied   |
 
 ## Sample data
 

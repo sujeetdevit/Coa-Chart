@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   defaultDisplayOptions,
   type ChartDisplayOptions,
 } from '../../current-chart/application/displayOptions';
 import { withForecasts } from '../../current-chart/application/forecast/forecastDisplay';
 import { msmRequestFor, type MsmRequest } from '../../current-chart/application/msm';
+import {
+  defaultPrintOptions,
+  messagesToPrint,
+  PRINT_STAGE,
+  printDisplayOptions,
+  printRange,
+  type PrintOptions,
+} from '../../current-chart/application/printChart';
 import { buildOverlayScene, overlayAt, type OverlayHit } from '../../current-chart/application/overlayScene';
 import {
   describeTrainHover,
@@ -16,7 +24,7 @@ import { buildTrainScene } from '../../current-chart/application/trainScene';
 import { DEFAULT_CHART_CONFIG, type ChartConfig } from '../../current-chart/configuration/chartConfig';
 import { DEFAULT_CHART_THEME } from '../../current-chart/configuration/chartTheme';
 import type { CurrentChartModel, EpenMessage, Station } from '../../current-chart/domain';
-import { computeDwellLanes, TrainHitIndex, type Rect } from '../../current-chart/engine';
+import { computeDwellLanes, CurrentChartEngine, TrainHitIndex, type Rect } from '../../current-chart/engine';
 import {
   forecastPointAt,
   rectBetween,
@@ -34,7 +42,9 @@ import {
   type ChartHover,
 } from '../../current-chart/rendering/build/buildInteractionLayer';
 import { buildMovementLayer } from '../../current-chart/rendering/build/buildMovementLayer';
+import { buildStaticRenderModel } from '../../current-chart/rendering/build/buildStaticRenderModel';
 import { composeRenderModel } from '../../current-chart/rendering/build/composeRenderModel';
+import { renderToImage } from '../../current-chart/rendering/konva';
 import type { ChartGesture } from '../../current-chart/rendering/types';
 import { useBlinkPhase } from '../../hooks/useBlinkPhase';
 import { useChartEngine } from '../../hooks/useChartEngine';
@@ -43,7 +53,7 @@ import { useFreezableModel } from '../../hooks/useFreezableModel';
 import { ChartCanvas } from './ChartCanvas';
 import { ChartContextMenu, type ContextMenuItem } from './ChartContextMenu';
 import { ChartHeader } from './ChartHeader';
-import type { ChartServices } from './chartServices';
+import type { ChartRefreshControls, ChartServices } from './chartServices';
 import { ChartToolbar, type ChartPanel, type ChartTool } from './ChartToolbar';
 import { ChartTooltip, type ChartTooltipHandle } from './ChartTooltip';
 import { ForecastBar } from './ForecastBar';
@@ -55,11 +65,15 @@ import { SettingsDialog } from './SettingsDialog';
 import { TrainDetailsPanel } from './TrainDetailsPanel';
 import { WritePadDialog } from './WritePadDialog';
 
+// Loaded on first use: printing is occasional and its form is not needed to draw the chart.
+const PrintDialog = lazy(() => import('./PrintDialog'));
+
 const theme = DEFAULT_CHART_THEME;
 
 interface CurrentChartViewProps {
   model: CurrentChartModel;
   services: ChartServices;
+  refresh: ChartRefreshControls;
 }
 
 /** Where a right-click happened: the chart time and station row under it, and any train. */
@@ -76,7 +90,7 @@ type DragMode =
   | { kind: 'zoomBox'; start: { x: number; y: number } }
   | { kind: 'forecast'; trainId: string; pointIndex: number; field: 'arrival' | 'departure' };
 
-export function CurrentChartView({ model: incoming, services }: CurrentChartViewProps) {
+export function CurrentChartView({ model: incoming, services, refresh }: CurrentChartViewProps) {
   const areaRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<ChartTooltipHandle>(null);
 
@@ -92,6 +106,7 @@ export function CurrentChartView({ model: incoming, services }: CurrentChartView
   const [msmMode, setMsmMode] = useState(false);
   const [panel, setPanel] = useState<ChartPanel>();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
 
   const visibleTrainIds = useMemo(
     () => baseModel.trains.filter((t) => isTrainVisible(t, filters)).map((t) => t.id),
@@ -479,6 +494,33 @@ export function CurrentChartView({ model: incoming, services }: CurrentChartView
     });
   };
 
+  // ── print ──
+  const renderPrintImage = useCallback(
+    (print: PrintOptions) => {
+      const range = printRange(print);
+      const printEngine = CurrentChartEngine.create({
+        board: baseModel.board,
+        stage: PRINT_STAGE,
+        margins: theme.margins,
+        window: range,
+        timeExtent: range,
+        now: baseModel.asOf,
+        config,
+      });
+      const image = buildStaticRenderModel({
+        engine: printEngine,
+        model: { ...model, epenMessages: messagesToPrint(savedMessages, print) },
+        lanes,
+        config,
+        theme,
+        options: printDisplayOptions(options, print),
+        isVisible: (t) => isTrainVisible(t, filters),
+      });
+      return renderToImage(image, PRINT_STAGE.pixelRatio);
+    },
+    [baseModel, model, savedMessages, lanes, config, options, filters],
+  );
+
   const selectedTrain = selectedId ? model.trains.find((t) => t.id === selectedId) : undefined;
 
   return (
@@ -487,6 +529,10 @@ export function CurrentChartView({ model: incoming, services }: CurrentChartView
         model={baseModel}
         visible={engine?.getVisibleTimeRange()}
         frozen={freeze.frozen}
+        refresh={refresh}
+        onPrint={() => {
+          setPrintOpen(true);
+        }}
         onReset={() => {
           update((current) => current.fitWindow(initialWindow));
         }}
@@ -594,6 +640,20 @@ export function CurrentChartView({ model: incoming, services }: CurrentChartView
               setHaltOpen(false);
             }}
           />
+        )}
+        {printOpen && engine && (
+          <Suspense fallback={null}>
+            <PrintDialog
+              boardId={baseModel.board.id}
+              initial={defaultPrintOptions(engine.getVisibleTimeRange(), options)}
+              messages={savedMessages}
+              sampleForecast={forecast.state.source === 'sample' && forecast.state.shown.size > 0}
+              renderImage={renderPrintImage}
+              onClose={() => {
+                setPrintOpen(false);
+              }}
+            />
+          </Suspense>
         )}
         {settingsOpen && (
           <SettingsDialog

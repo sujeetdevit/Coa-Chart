@@ -1,9 +1,13 @@
+import { formatIstTime } from '../../current-chart/application/trainDescriptions';
 import { istClock, type CurrentChartModel, type EpochMs, type TimeRange } from '../../current-chart/domain';
+import type { ChartRefreshControls } from './chartServices';
 
 interface ChartHeaderProps {
   model: CurrentChartModel;
   visible: TimeRange | undefined;
   frozen: boolean;
+  refresh: ChartRefreshControls;
+  onPrint: () => void;
   onReset: () => void;
   onZoomTime: (factor: number) => void;
   onZoomStations: (factor: number) => void;
@@ -34,7 +38,7 @@ function describeRange(range: TimeRange): string {
 }
 
 export function ChartHeader(props: ChartHeaderProps) {
-  const { model, visible } = props;
+  const { model, visible, refresh } = props;
   return (
     <header className="chart-header">
       <span className="chart-title">Current Chart</span>
@@ -44,7 +48,37 @@ export function ChartHeader(props: ChartHeaderProps) {
         Last report {istDate(model.asOf)} {istTime(model.asOf)}
       </span>
       {props.frozen && <span className="badge frozen">Frozen</span>}
+      {refresh.error === undefined ? (
+        <span className="muted" title="When the data on screen was last checked with the source">
+          {refresh.refreshing ? 'Refreshing…' : `Updated ${formatIstTime(refresh.loadedAt, true)}`}
+        </span>
+      ) : (
+        <span className="badge problem" role="status" title={refresh.error}>
+          Refresh failed · showing data from {formatIstTime(refresh.loadedAt, true)}
+        </span>
+      )}
       <span className="toolbar">
+        <label
+          className="auto-refresh"
+          title={`Reload the data every ${refresh.intervalSeconds / 60} minutes (waits while Freeze is on)`}
+        >
+          <input
+            type="checkbox"
+            checked={refresh.auto}
+            onChange={(e) => {
+              refresh.onAutoChange(e.target.checked);
+            }}
+          />
+          Auto refresh
+        </label>
+        <button
+          type="button"
+          onClick={refresh.onRefresh}
+          disabled={refresh.refreshing}
+          title="Reload the data now"
+        >
+          Refresh
+        </button>
         <button
           type="button"
           onClick={props.onReset}
@@ -92,6 +126,9 @@ export function ChartHeader(props: ChartHeaderProps) {
             Stations +
           </button>
         </span>
+        <button type="button" onClick={props.onPrint} title="Print the chart or save it as an image">
+          Print
+        </button>
         <button type="button" onClick={props.onSettings} title="Chart preferences">
           Settings
         </button>
