@@ -212,6 +212,8 @@ export function buildOverlayScene(
     const row = Math.round(y);
     const slot = cautionSlots.get(row) ?? 0;
     cautionSlots.set(row, slot + 1);
+    // A narrowed column shows the icons that still start inside it; a hidden one shows none.
+    if (slot * CAUTION_SLOT >= columns.caution.width) continue;
     const cx = columns.caution.x + CAUTION_SLOT / 2 + slot * CAUTION_SLOT;
     const icon: CautionIcon = { id: `ctn:${group.key}`, group, cx, cy: y, text: cautionSpeedText(group) };
     cautions.push(icon);

@@ -257,9 +257,18 @@ export class CurrentChartEngine {
    * vertical zoom relative to fit-to-height, with the same station at the top edge.
    */
   resize(stage: Size): CurrentChartEngine {
+    return this.relayout(stage, this.options.margins);
+  }
+
+  /** New space around the plot (e.g. a side column narrowed or hidden). Keeps the view like resize. */
+  withMargins(margins: Margins): CurrentChartEngine {
+    return this.relayout(this.options.stage, margins);
+  }
+
+  private relayout(stage: Size, margins: Margins): CurrentChartEngine {
     const visible = this.getVisibleTimeRange();
     const oldPlot = this.bounds.plot;
-    const newPlot = plotSize(stage, this.options.margins);
+    const newPlot = plotSize(stage, margins);
     const scale = this.layout.totalUnits > 0 ? newPlot.height / oldPlot.height : 1;
     const pxPerUnit = this.viewport.pxPerUnit * scale;
     const viewport: Viewport = {
@@ -270,7 +279,7 @@ export class CurrentChartEngine {
       pxPerUnit,
       scrollY: this.viewport.scrollY * scale,
     };
-    return new CurrentChartEngine({ ...this.options, stage }, this.layout, viewport);
+    return new CurrentChartEngine({ ...this.options, stage, margins }, this.layout, viewport);
   }
 
   withViewport(viewport: Viewport): CurrentChartEngine {

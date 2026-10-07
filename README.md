@@ -40,6 +40,11 @@ src/current-chart/
 | Drag                                      | Pan                             |
 | Double-click, or **Now**                  | Back to the initial window      |
 
+The **Caution** and **Line** columns on the right can be narrowed or hidden: drag a column's left
+edge (the grey bar with a handle block in the middle) to the right, and drag it back left to show it again. The
+chart widens to use the space. Both columns come back on **Refresh** or a page reload, and the
+printed chart always includes both.
+
 With **Zoom** ticked, drag a rectangle to zoom into it. With **MSM** ticked, click a block section a
 train has run through. Right-click the chart for **Write Pad** (EPEN), **Message Show** and, over a
 train, a single-train forecast. In a manual forecast (tick **Manual**, then **MF**), drag a forecast

@@ -139,6 +139,21 @@ describe('CurrentChartEngine — zoom and pan', () => {
     );
   });
 
+  it('widens the plot when a side column gives back space, keeping the time range and station rows', () => {
+    const zoomed = engine.zoomAt({ x: 300, y: 100 }, 2, 1.5);
+    const wider = zoomed.withMargins({ ...options.margins, right: 10 });
+
+    expect(wider.getChartBounds()).toEqual({
+      stage: { width: 1000, height: 440 },
+      plot: { x: 60, y: 20, width: 930, height: 400 },
+    });
+    expect(wider.getVisibleTimeRange().start).toBeCloseTo(zoomed.getVisibleTimeRange().start, 3);
+    expect(wider.getVisibleTimeRange().end).toBeCloseTo(zoomed.getVisibleTimeRange().end, 3);
+    expect(wider.stationToY('1:BBB')).toBeCloseTo(zoomed.stationToY('1:BBB') ?? NaN, 9);
+    // The original engine is untouched.
+    expect(zoomed.getChartBounds().plot.width).toBe(880);
+  });
+
   it('zooms to a selected rectangle on both axes', () => {
     const r = { x: 110, y: 50, width: 220, height: 100 };
     const zoomed = engine.zoomToRect(r);

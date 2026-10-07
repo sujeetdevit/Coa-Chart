@@ -1,7 +1,12 @@
 import { MSG_HEIGHT, MSG_WIDTH, type OverlayScene } from '../../application/overlayScene';
 import { departmentKey, type ChartTheme } from '../../configuration/chartTheme';
 import type { CurrentChartEngine } from '../../engine';
+import { grabX, RESIZABLE_COLUMNS, type ResizableColumn } from '../../interactions/columnResize';
 import type { Primitive, PrimitiveGroup } from '../types';
+
+const MIN_TITLE_WIDTH = 30;
+/** Group holding the drag splitters: screen-only, left out of pictures of the chart. */
+export const SPLITTER_GROUP = 'column-splitters';
 
 function star(cx: number, cy: number, r: number): number[] {
   const points: number[] = [];
@@ -26,6 +31,8 @@ export function buildInfrastructureLayer(
   scene: OverlayScene,
   engine: CurrentChartEngine,
   theme: ChartTheme,
+  /** The splitter under the pointer or being dragged, drawn highlighted. */
+  activeColumn?: ResizableColumn,
 ): PrimitiveGroup[] {
   const { plot, stage } = engine.getChartBounds();
   const o = theme.overlays;
@@ -133,7 +140,10 @@ export function buildInfrastructureLayer(
         stroke: theme.layout.panelDivider,
         strokeWidth: 1,
       },
-      {
+    );
+    // No room for a title on a hidden or very narrow column.
+    if (col.width >= MIN_TITLE_WIDTH) {
+      panels.push({
         kind: 'text',
         id: `panel-title:${key}`,
         text: title,
@@ -144,16 +154,58 @@ export function buildInfrastructureLayer(
         fill: '#555555',
         fontSize: 10,
         fontFamily: theme.fontFamily,
+      });
+    }
+  }
+  // Splitters on the edges that can be dragged to narrow or hide a column: a full-height bar
+  // with a handle block in the middle, so it reads as something to grab.
+  const splitters: Primitive[] = [];
+  const sp = theme.layout.splitter;
+  for (const key of RESIZABLE_COLUMNS) {
+    const x = grabX(scene.columns[key].x, stage.width);
+    const active = key === activeColumn;
+    const handleY = plot.y + (plot.height - sp.handleHeight) / 2;
+    const marks: number[] = [];
+    for (const dy of [-6, 0, 6]) {
+      const y = handleY + sp.handleHeight / 2 + dy;
+      marks.push(x - 2, y, x + 2, y);
+    }
+    splitters.push(
+      {
+        kind: 'rect',
+        id: `splitter-bar:${key}`,
+        x: x - sp.barWidth / 2,
+        y: 0,
+        width: sp.barWidth,
+        height: stage.height,
+        fill: active ? sp.activeBar : sp.bar,
+      },
+      {
+        kind: 'rect',
+        id: `splitter-handle:${key}`,
+        x: Math.min(x - sp.handleWidth / 2, stage.width - sp.handleWidth),
+        y: handleY,
+        width: sp.handleWidth,
+        height: sp.handleHeight,
+        fill: active ? sp.activeHandle : sp.handle,
+      },
+      {
+        kind: 'segments',
+        id: `splitter-marks:${key}`,
+        points: marks,
+        stroke: sp.handleMark,
+        strokeWidth: 1.5,
       },
     );
   }
 
   // ── icons and boxes, clipped to the plot's vertical range ──
+  const cautionIcons: Primitive[] = [];
   const icons: Primitive[] = [];
   const r = o.cautionIconSize / 2;
   for (const icon of scene.cautions) {
     const { direction } = icon.group;
-    icons.push({
+    cautionIcons.push({
       kind: 'line',
       id: `${icon.id}:icon`,
       points:
@@ -166,7 +218,7 @@ export function buildInfrastructureLayer(
       strokeWidth: 0.5,
     });
     if (icon.text) {
-      icons.push({
+      cautionIcons.push({
         kind: 'text',
         id: `${icon.id}:text`,
         text: icon.text,
@@ -224,10 +276,15 @@ export function buildInfrastructureLayer(
     width: stage.width - scene.columns.caution.x,
     height: plot.height + 28,
   };
+  // Caution captions are wider than their icon: they may run into the narrow "U" column, as on
+  // the full-width layout, but never over the line boxes.
+  const cautionClip = { ...columnsClip, width: scene.columns.occupancy.x - scene.columns.caution.x };
   return [
     { id: 'blocks', clip: plotClip, items: blocks },
     { id: 'panels', items: panels },
+    { id: 'caution-items', clip: cautionClip, items: cautionIcons },
     { id: 'column-items', clip: columnsClip, items: icons },
+    { id: SPLITTER_GROUP, items: splitters },
   ];
 }
 

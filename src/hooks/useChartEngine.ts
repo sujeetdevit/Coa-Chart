@@ -10,6 +10,7 @@ interface EngineState {
   engine: CurrentChartEngine;
   model: CurrentChartModel;
   config: ChartConfig;
+  margins: ChartTheme['margins'];
 }
 
 /**
@@ -48,7 +49,7 @@ export function useChartEngine(
       engine = state
         ? create(initialWindow).fitWindow(state.engine.getVisibleTimeRange())
         : create(initialWindow);
-      setState({ engine, model, config });
+      setState({ engine, model, config, margins: theme.margins });
     } else if (
       engine &&
       (engine.getChartBounds().stage.width !== size.width ||
@@ -56,6 +57,9 @@ export function useChartEngine(
     ) {
       engine = engine.resize(size);
       setState({ ...state, engine });
+    } else if (engine && state.margins !== theme.margins) {
+      engine = engine.withMargins(theme.margins);
+      setState({ ...state, engine, margins: theme.margins });
     }
   }
 

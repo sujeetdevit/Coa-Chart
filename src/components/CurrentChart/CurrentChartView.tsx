@@ -22,9 +22,16 @@ import {
 import { isTrainVisible, NO_FILTERS, type TrainFilters } from '../../current-chart/application/trainFilters';
 import { buildTrainScene } from '../../current-chart/application/trainScene';
 import { DEFAULT_CHART_CONFIG, type ChartConfig } from '../../current-chart/configuration/chartConfig';
-import { DEFAULT_CHART_THEME } from '../../current-chart/configuration/chartTheme';
+import { DEFAULT_CHART_THEME, withColumnWidths } from '../../current-chart/configuration/chartTheme';
 import type { CurrentChartModel, EpenMessage, Station } from '../../current-chart/domain';
 import { computeDwellLanes, CurrentChartEngine, TrainHitIndex, type Rect } from '../../current-chart/engine';
+import {
+  COLUMN_TITLES,
+  columnEdgeAt,
+  draggedWidth,
+  type ColumnWidths,
+  type ResizableColumn,
+} from '../../current-chart/interactions/columnResize';
 import {
   forecastPointAt,
   rectBetween,
@@ -68,7 +75,11 @@ import { WritePadDialog } from './WritePadDialog';
 // Loaded on first use: printing is occasional and its form is not needed to draw the chart.
 const PrintDialog = lazy(() => import('./PrintDialog'));
 
-const theme = DEFAULT_CHART_THEME;
+/** Both side columns at full width: how the chart opens, and how it is always printed. */
+const FULL_COLUMNS: ColumnWidths = {
+  caution: DEFAULT_CHART_THEME.layout.cautionColumn,
+  occupancy: DEFAULT_CHART_THEME.layout.occupancyColumn,
+};
 
 interface CurrentChartViewProps {
   model: CurrentChartModel;
@@ -88,11 +99,18 @@ interface ContextTarget {
 type DragMode =
   | { kind: 'pan' }
   | { kind: 'zoomBox'; start: { x: number; y: number } }
+  | { kind: 'column'; column: ResizableColumn; startX: number; startWidth: number }
   | { kind: 'forecast'; trainId: string; pointIndex: number; field: 'arrival' | 'departure' };
 
 export function CurrentChartView({ model: incoming, services, refresh }: CurrentChartViewProps) {
   const areaRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<ChartTooltipHandle>(null);
+
+  // ── side columns: narrowed or hidden by dragging their left edge; not remembered ──
+  const [columnWidths, setColumnWidths] = useState<ColumnWidths>(FULL_COLUMNS);
+  const theme = useMemo(() => withColumnWidths(DEFAULT_CHART_THEME, columnWidths), [columnWidths]);
+  /** The column splitter under the pointer or being dragged (drawn highlighted). */
+  const [activeColumn, setActiveColumn] = useState<ResizableColumn>();
 
   // ── settings, freeze, filters ──
   const [config, setConfig] = useState<ChartConfig>(DEFAULT_CHART_CONFIG);
@@ -150,7 +168,7 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
   );
   const overlays = useMemo(
     () => (engine ? buildOverlayScene(engine, model, theme, model.asOf) : undefined),
-    [engine, model],
+    [engine, model, theme],
   );
   const hitIndex = useMemo(
     () => (scene ? new TrainHitIndex(scene.items.map((i) => i.actual)) : undefined),
@@ -171,21 +189,21 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
   );
   const blinkOff = useBlinkPhase(scene?.items.some((i) => i.crewOverDuty) ?? false, config.crew);
 
-  const base = useMemo(() => (engine ? buildBaseRenderModel(engine, theme) : undefined), [engine]);
+  const base = useMemo(() => (engine ? buildBaseRenderModel(engine, theme) : undefined), [engine, theme]);
   const infrastructure = useMemo(
-    () => (engine && overlays ? buildInfrastructureLayer(overlays, engine, theme) : []),
-    [engine, overlays],
+    () => (engine && overlays ? buildInfrastructureLayer(overlays, engine, theme, activeColumn) : []),
+    [engine, overlays, theme, activeColumn],
   );
   const annotations = useMemo(
     () => (engine && overlays ? buildAnnotationGroups(overlays, engine, theme) : []),
-    [engine, overlays],
+    [engine, overlays, theme],
   );
   const movement = useMemo(
     () =>
       engine && scene
         ? [...buildMovementLayer(scene, engine, options, config, theme, blinkOff), ...annotations]
         : [],
-    [engine, scene, options, config, blinkOff, annotations],
+    [engine, scene, options, config, blinkOff, annotations, theme],
   );
   const interaction = useMemo(
     () =>
@@ -197,7 +215,7 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
             ...(selectionRect ? { selectionRect } : {}),
           })
         : [],
-    [engine, scene, hover, selectedId, overlayHover, selectionRect],
+    [engine, scene, hover, selectedId, overlayHover, selectionRect, theme],
   );
   const renderModel = useMemo(
     () => (base ? composeRenderModel(base, { infrastructure, movement, interaction }) : undefined),
@@ -217,6 +235,7 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
     msmMode,
     forecast,
     baseModel,
+    columnWidths,
   });
   useEffect(() => {
     live.current = {
@@ -231,6 +250,7 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
       msmMode,
       forecast,
       baseModel,
+      columnWidths,
     };
   });
   const drag = useRef<DragMode>({ kind: 'pan' });
@@ -331,14 +351,42 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
   }, []);
 
   // ── gestures ──
+  const columnEdgeUnder = useCallback((x: number): ResizableColumn | undefined => {
+    const { overlays: o, engine: e } = live.current;
+    if (!o || !e) return undefined;
+    return columnEdgeAt(
+      x,
+      { caution: o.columns.caution.x, occupancy: o.columns.occupancy.x },
+      e.getChartBounds().stage.width,
+    );
+  }, []);
+
   const onGesture = useCallback(
     (gesture: ChartGesture) => {
       const { engine: e } = live.current;
       switch (gesture.type) {
-        case 'pointerMove':
+        case 'pointerMove': {
+          const column = columnEdgeUnder(gesture.x);
+          setActiveColumn(column);
+          if (column) {
+            hideHover();
+            if (areaRef.current) areaRef.current.style.cursor = 'col-resize';
+            const hidden = live.current.columnWidths[column] === 0;
+            tooltipRef.current?.show(
+              {
+                title: `${COLUMN_TITLES[column]} column`,
+                lines: [hidden ? 'Drag left to show' : 'Drag right to narrow or hide, left to widen'],
+              },
+              gesture.x,
+              gesture.y,
+            );
+            return;
+          }
           showHover(gesture.x, gesture.y);
           return;
+        }
         case 'pointerLeave':
+          setActiveColumn(undefined);
           hideHover();
           return;
         case 'click':
@@ -364,6 +412,17 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
         case 'dragStart': {
           hideHover();
           const { tool: t, forecast: f, forecastIndex: fIndex, scene: s } = live.current;
+          const column = columnEdgeUnder(gesture.x);
+          if (column) {
+            setActiveColumn(column);
+            drag.current = {
+              kind: 'column',
+              column,
+              startX: gesture.x,
+              startWidth: live.current.columnWidths[column],
+            };
+            return;
+          }
           if (t === 'zoom') {
             drag.current = { kind: 'zoomBox', start: { x: gesture.x, y: gesture.y } };
             return;
@@ -389,6 +448,13 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
         }
         case 'drag': {
           const mode = drag.current;
+          if (mode.kind === 'column') {
+            const width = draggedWidth(mode.startWidth, mode.startX, gesture.x, FULL_COLUMNS[mode.column]);
+            setColumnWidths((prev) =>
+              prev[mode.column] === width ? prev : { ...prev, [mode.column]: width },
+            );
+            return;
+          }
           if (mode.kind === 'zoomBox') {
             setSelectionRect(rectBetween(mode.start, gesture));
             return;
@@ -408,6 +474,10 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
         case 'dragEnd': {
           const mode = drag.current;
           drag.current = { kind: 'pan' };
+          if (mode.kind === 'column') {
+            setActiveColumn(undefined);
+            return;
+          }
           if (mode.kind === 'zoomBox') {
             setSelectionRect(undefined);
             const r = rectBetween(mode.start, gesture);
@@ -431,7 +501,7 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
         return current;
       });
     },
-    [update, initialWindow, showHover, hideHover, onClick],
+    [update, initialWindow, showHover, hideHover, onClick, columnEdgeUnder],
   );
 
   const zoom = useCallback(
@@ -501,7 +571,7 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
       const printEngine = CurrentChartEngine.create({
         board: baseModel.board,
         stage: PRINT_STAGE,
-        margins: theme.margins,
+        margins: DEFAULT_CHART_THEME.margins,
         window: range,
         timeExtent: range,
         now: baseModel.asOf,
@@ -512,7 +582,8 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
         model: { ...model, epenMessages: messagesToPrint(savedMessages, print) },
         lanes,
         config,
-        theme,
+        // Printed with both side columns, whatever is hidden on screen.
+        theme: DEFAULT_CHART_THEME,
         options: printDisplayOptions(options, print),
         isVisible: (t) => isTrainVisible(t, filters),
       });
@@ -529,7 +600,14 @@ export function CurrentChartView({ model: incoming, services, refresh }: Current
         model={baseModel}
         visible={engine?.getVisibleTimeRange()}
         frozen={freeze.frozen}
-        refresh={refresh}
+        refresh={{
+          ...refresh,
+          // A manual refresh also brings back any side column that was narrowed or hidden.
+          onRefresh: () => {
+            setColumnWidths(FULL_COLUMNS);
+            refresh.onRefresh();
+          },
+        }}
         onPrint={() => {
           setPrintOpen(true);
         }}

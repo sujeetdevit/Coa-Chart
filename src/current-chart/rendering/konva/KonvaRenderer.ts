@@ -104,8 +104,12 @@ export class KonvaRenderer implements ChartRenderer {
         layer.add(state.group);
         orderChanged = true;
       }
-      // A zero-size clip means "no clip" to Konva.
-      state.group.clip(spec.clip ?? { x: 0, y: 0, width: 0, height: 0 });
+      // Konva clips whenever the clip width and height are numbers, even 0, so "no clip" must
+      // clear them: a zero-size clip would hide the whole group.
+      state.group.setAttr('clipX', spec.clip?.x);
+      state.group.setAttr('clipY', spec.clip?.y);
+      state.group.setAttr('clipWidth', spec.clip?.width);
+      state.group.setAttr('clipHeight', spec.clip?.height);
       state.items = spec.items;
     }
     for (const [id, state] of states) {

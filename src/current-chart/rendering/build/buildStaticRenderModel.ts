@@ -7,7 +7,7 @@ import type { CurrentChartModel, Train } from '../../domain';
 import type { CurrentChartEngine, DwellLanes } from '../../engine';
 import type { ChartRenderModel } from '../types';
 import { buildBaseRenderModel } from './buildBaseRenderModel';
-import { buildAnnotationGroups, buildInfrastructureLayer } from './buildInfrastructureLayer';
+import { buildAnnotationGroups, buildInfrastructureLayer, SPLITTER_GROUP } from './buildInfrastructureLayer';
 import { buildMovementLayer } from './buildMovementLayer';
 import { composeRenderModel } from './composeRenderModel';
 
@@ -24,14 +24,15 @@ export interface StaticChartInput {
 
 /**
  * The whole chart as one render model, for a picture rather than the live view: no hover or
- * selection, and blinking labels drawn in their "on" state.
+ * selection, no drag handles, and blinking labels drawn in their "on" state.
  */
 export function buildStaticRenderModel(input: StaticChartInput): ChartRenderModel {
   const { engine, model, lanes, config, theme, options } = input;
   const scene = buildTrainScene(engine, model, lanes, config, input.isVisible);
   const overlays = buildOverlayScene(engine, model, theme, model.asOf);
   return composeRenderModel(buildBaseRenderModel(engine, theme), {
-    infrastructure: buildInfrastructureLayer(overlays, engine, theme),
+    // Drag handles are for the screen only.
+    infrastructure: buildInfrastructureLayer(overlays, engine, theme).filter((g) => g.id !== SPLITTER_GROUP),
     movement: [
       ...buildMovementLayer(scene, engine, options, config, theme, false),
       ...buildAnnotationGroups(overlays, engine, theme),

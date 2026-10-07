@@ -139,6 +139,8 @@ describe('buildStaticRenderModel', () => {
     expect(image.height).toBe(PRINT_STAGE.height);
     expect(engine.getVisibleTimeRange()).toEqual(window);
     expect(image.layers.interaction).toEqual([]);
+    expect(image.layers.infrastructure.map((g) => g.id)).not.toContain('column-splitters');
+    expect(image.layers.infrastructure.map((g) => g.id)).toContain('panels');
     expect(image.layers.background.length).toBeGreaterThan(0);
     expect(image.layers.axes.length).toBeGreaterThan(0);
   });
