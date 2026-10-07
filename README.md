@@ -45,6 +45,9 @@ edge (the grey bar with a handle block in the middle) to the right, and drag it 
 chart widens to use the space. Both columns come back on **Refresh** or a page reload, and the
 printed chart always includes both.
 
+Blocks are hatched by the line they are imposed on: lines rising to the right for UP, falling to
+the right for DN, and crossed for both lines. The legend (**L**) repeats this.
+
 With **Zoom** ticked, drag a rectangle to zoom into it. With **MSM** ticked, click a block section a
 train has run through. Right-click the chart for **Write Pad** (EPEN), **Message Show** and, over a
 train, a single-train forecast. In a manual forecast (tick **Manual**, then **MF**), drag a forecast

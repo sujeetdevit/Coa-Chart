@@ -66,6 +66,7 @@ export function LegendPanel({
           <Swatch colour={o.blockBurst} shape="square" /> Block burst · <Swatch colour={o.blockAst} /> AST ·{' '}
           <Swatch colour={o.blockAet} /> AET
         </li>
+        <li>Block hatching: ／ UP line · ＼ DN line · ✕ both lines</li>
       </ul>
       <h4>Line occupancy</h4>
       <ul className="legend-list">

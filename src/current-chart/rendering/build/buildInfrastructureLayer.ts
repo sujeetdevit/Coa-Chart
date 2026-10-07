@@ -3,6 +3,7 @@ import { departmentKey, type ChartTheme } from '../../configuration/chartTheme';
 import type { CurrentChartEngine } from '../../engine';
 import { grabX, RESIZABLE_COLUMNS, type ResizableColumn } from '../../interactions/columnResize';
 import type { Primitive, PrimitiveGroup } from '../types';
+import { hatchSegments } from './hatch';
 
 const MIN_TITLE_WIDTH = 30;
 /** Group holding the drag splitters: screen-only, left out of pictures of the chart. */
@@ -85,6 +86,22 @@ export function buildInfrastructureLayer(
         closed: true,
         stroke: colour,
         strokeWidth: 1,
+      });
+    }
+    const hatch = hatchSegments(shape, shape.block.direction, o.blockHatchSpacing, {
+      x0: plot.x,
+      y0: plot.y,
+      x1: plot.x + plot.width,
+      y1: plot.y + plot.height,
+    });
+    if (hatch.length > 0) {
+      blocks.push({
+        kind: 'segments',
+        id: `${shape.id}:hatch`,
+        points: hatch,
+        stroke: colour,
+        strokeWidth: o.blockHatchWidth,
+        opacity: o.blockHatchOpacity,
       });
     }
     for (const [key, x, stroke] of [

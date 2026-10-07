@@ -126,6 +126,13 @@ export interface OverlayTheme {
   /** Departments the manual gives no colour for. */
   blockDefault: string;
   blockFillOpacity: number;
+  /**
+   * Hatching by the line the block is imposed on: UP lines rise to the right, DN lines fall,
+   * both lines are cross-hatched. Distance between hatch lines in pixels, and their look.
+   */
+  blockHatchSpacing: number;
+  blockHatchWidth: number;
+  blockHatchOpacity: number;
   /** Manual: the red part of the block is the burst period. */
   blockBurst: string;
   blockBurstOpacity: number;
@@ -170,7 +177,7 @@ const layout: ChartLayout = {
   top: 24,
   bottom: 24,
   left: 60,
-  stationColumn: 112,
+  stationColumn: 86,
   cautionColumn: 90,
   unusualColumn: 32,
   occupancyColumn: 190,
@@ -276,7 +283,10 @@ export const DEFAULT_CHART_THEME: ChartTheme = {
       ENGGCONST: '#c71585',
     },
     blockDefault: '#696969',
-    blockFillOpacity: 0.22,
+    blockFillOpacity: 0.14,
+    blockHatchSpacing: 7,
+    blockHatchWidth: 1,
+    blockHatchOpacity: 0.6,
     blockBurst: '#ff0000',
     blockBurstOpacity: 0.4,
     blockAst: '#8b0000',
