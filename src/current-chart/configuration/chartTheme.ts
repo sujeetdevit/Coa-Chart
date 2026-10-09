@@ -176,7 +176,7 @@ export interface OverlayTheme {
 const layout: ChartLayout = {
   top: 24,
   bottom: 24,
-  left: 60,
+  left: 86,
   stationColumn: 86,
   cautionColumn: 90,
   unusualColumn: 32,

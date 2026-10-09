@@ -5,6 +5,8 @@ import type { ChartRenderModel, LinePrimitive, Primitive, PrimitiveGroup, TextPr
 
 /** Gap between the plot edge and axis labels. */
 const LABEL_GAP = 6;
+/** Room for a right-aligned distance such as "10.17" at the left edge. */
+const ACTUAL_DISTANCE_WIDTH = 28;
 
 function stationLabelStyle(
   station: Station,
@@ -107,6 +109,19 @@ export function buildBaseRenderModel(engine: CurrentChartEngine, theme: ChartThe
         id: `sl-km:${station.id}`,
         text: formatKm(station.kmFromReference),
         x: right + theme.layout.stationColumn - LABEL_GAP,
+        y: sy,
+        align: 'right',
+        baseline: 'middle',
+        fill: stationAxis.kmLabel,
+        fontSize: stationAxis.kmLabelSize,
+        fontFamily,
+      },
+      {
+        // Distance to the next station (source MANACTLDIST), left of the left-hand station name.
+        kind: 'text',
+        id: `sl-actual:${station.id}`,
+        text: formatKm(station.actualDistance),
+        x: plot.x - theme.layout.left + LABEL_GAP + ACTUAL_DISTANCE_WIDTH,
         y: sy,
         align: 'right',
         baseline: 'middle',

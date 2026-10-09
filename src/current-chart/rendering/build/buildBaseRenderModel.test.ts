@@ -13,7 +13,7 @@ const board = normalizeSnapshot(
   smallSnapshot({
     boardDetails: [
       boardRow('AAA', 1, 1),
-      boardRow('BBB', 1, 2),
+      boardRow('BBB', 1, 2, { MANACTLDIST: 10.17 }),
       boardRow('SDG', 1, 3, { MACCLASSFLAG: 'S' }),
       boardRow('CCC', 1, 4),
     ],
@@ -103,6 +103,18 @@ describe('buildBaseRenderModel', () => {
     expect(right.align).toBe('left');
     expect(right.y).toBeCloseTo(plot.y + (engine.stationToY('1:BBB') ?? NaN), 6);
     expect(byId(model, 'sl-km:1:BBB', 'text').text).toBe('80');
+  });
+
+  it('shows the distance to the next station at the left edge, on the station row', () => {
+    const actual = byId(model, 'sl-actual:1:BBB', 'text');
+    const name = byId(model, 'sl-left:1:BBB', 'text');
+    expect(actual.text).toBe('10.17');
+    expect(actual.align).toBe('right');
+    expect(actual.y).toBe(name.y);
+    expect(actual.x).toBeGreaterThan(0);
+    // Clear of the station name, which is right-aligned against the plot.
+    expect(actual.x).toBeLessThan(name.x - 40);
+    expect(actual.fill).toBe(theme.stationAxis.kmLabel);
   });
 
   it('draws a dotted line per visible station', () => {
