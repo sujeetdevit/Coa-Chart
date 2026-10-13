@@ -65,18 +65,6 @@ export interface ChartLayout {
   occupancyColumn: number;
   panelBackground: string;
   panelDivider: string;
-  /** Splitter on a column edge that can be dragged: a full-height bar with a handle block. */
-  splitter: {
-    barWidth: number;
-    bar: string;
-    handleWidth: number;
-    handleHeight: number;
-    handle: string;
-    handleMark: string;
-    /** Bar and handle colours while the pointer is on the splitter or dragging it. */
-    activeBar: string;
-    activeHandle: string;
-  };
 }
 
 export interface MovementTheme {
@@ -183,16 +171,6 @@ const layout: ChartLayout = {
   occupancyColumn: 190,
   panelBackground: '#f3f3f3',
   panelDivider: '#c8c8c8',
-  splitter: {
-    barWidth: 4,
-    bar: '#d3d9e0',
-    handleWidth: 6,
-    handleHeight: 46,
-    handle: '#7d8894',
-    handleMark: '#ffffff',
-    activeBar: '#a9c8f3',
-    activeHandle: '#1a73e8',
-  },
 };
 
 export function marginsFor(l: ChartLayout): ChartTheme['margins'] {
@@ -205,14 +183,19 @@ export function marginsFor(l: ChartLayout): ChartTheme['margins'] {
 }
 
 /**
- * The theme with the caution and line-occupancy columns at the given widths (0 hides one).
- * The plot takes up whatever space the columns give back.
+ * The theme with the caution, line-occupancy and (optionally) unusual columns at the given
+ * widths (0 hides one). The plot takes up whatever space the columns give back.
  */
 export function withColumnWidths(
   theme: ChartTheme,
-  widths: { caution: number; occupancy: number },
+  widths: { caution: number; occupancy: number; unusual?: number },
 ): ChartTheme {
-  const next = { ...theme.layout, cautionColumn: widths.caution, occupancyColumn: widths.occupancy };
+  const next = {
+    ...theme.layout,
+    cautionColumn: widths.caution,
+    occupancyColumn: widths.occupancy,
+    unusualColumn: widths.unusual ?? theme.layout.unusualColumn,
+  };
   return { ...theme, layout: next, margins: marginsFor(next) };
 }
 

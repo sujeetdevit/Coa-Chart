@@ -1,13 +1,10 @@
 import { MSG_HEIGHT, MSG_WIDTH, type OverlayScene } from '../../application/overlayScene';
 import { departmentKey, type ChartTheme } from '../../configuration/chartTheme';
 import type { CurrentChartEngine } from '../../engine';
-import { grabX, RESIZABLE_COLUMNS, type ResizableColumn } from '../../interactions/columnResize';
 import type { Primitive, PrimitiveGroup } from '../types';
 import { hatchSegments } from './hatch';
 
 const MIN_TITLE_WIDTH = 30;
-/** Group holding the drag splitters: screen-only, left out of pictures of the chart. */
-export const SPLITTER_GROUP = 'column-splitters';
 
 function star(cx: number, cy: number, r: number): number[] {
   const points: number[] = [];
@@ -32,8 +29,6 @@ export function buildInfrastructureLayer(
   scene: OverlayScene,
   engine: CurrentChartEngine,
   theme: ChartTheme,
-  /** The splitter under the pointer or being dragged, drawn highlighted. */
-  activeColumn?: ResizableColumn,
 ): PrimitiveGroup[] {
   const { plot, stage } = engine.getChartBounds();
   const o = theme.overlays;
@@ -174,47 +169,6 @@ export function buildInfrastructureLayer(
       });
     }
   }
-  // Splitters on the edges that can be dragged to narrow or hide a column: a full-height bar
-  // with a handle block in the middle, so it reads as something to grab.
-  const splitters: Primitive[] = [];
-  const sp = theme.layout.splitter;
-  for (const key of RESIZABLE_COLUMNS) {
-    const x = grabX(scene.columns[key].x, stage.width);
-    const active = key === activeColumn;
-    const handleY = plot.y + (plot.height - sp.handleHeight) / 2;
-    const marks: number[] = [];
-    for (const dy of [-6, 0, 6]) {
-      const y = handleY + sp.handleHeight / 2 + dy;
-      marks.push(x - 2, y, x + 2, y);
-    }
-    splitters.push(
-      {
-        kind: 'rect',
-        id: `splitter-bar:${key}`,
-        x: x - sp.barWidth / 2,
-        y: 0,
-        width: sp.barWidth,
-        height: stage.height,
-        fill: active ? sp.activeBar : sp.bar,
-      },
-      {
-        kind: 'rect',
-        id: `splitter-handle:${key}`,
-        x: Math.min(x - sp.handleWidth / 2, stage.width - sp.handleWidth),
-        y: handleY,
-        width: sp.handleWidth,
-        height: sp.handleHeight,
-        fill: active ? sp.activeHandle : sp.handle,
-      },
-      {
-        kind: 'segments',
-        id: `splitter-marks:${key}`,
-        points: marks,
-        stroke: sp.handleMark,
-        strokeWidth: 1.5,
-      },
-    );
-  }
 
   // ── icons and boxes, clipped to the plot's vertical range ──
   const cautionIcons: Primitive[] = [];
@@ -301,7 +255,6 @@ export function buildInfrastructureLayer(
     { id: 'panels', items: panels },
     { id: 'caution-items', clip: cautionClip, items: cautionIcons },
     { id: 'column-items', clip: columnsClip, items: icons },
-    { id: SPLITTER_GROUP, items: splitters },
   ];
 }
 

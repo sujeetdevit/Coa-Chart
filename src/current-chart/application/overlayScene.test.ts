@@ -3,7 +3,6 @@ import { normalizeSnapshot, parseCoaDateTime } from '../adapters';
 import { DEFAULT_CHART_CONFIG } from '../configuration/chartConfig';
 import { DEFAULT_CHART_THEME, withColumnWidths } from '../configuration/chartTheme';
 import { CurrentChartEngine } from '../engine';
-import { grabX } from '../interactions/columnResize';
 import { buildInfrastructureLayer } from '../rendering/build/buildInfrastructureLayer';
 import { buildOverlayScene, overlayAt } from './overlayScene';
 import { initialTimeWindow, pannableTimeExtent } from './timeWindow';
@@ -84,7 +83,7 @@ describe('overlay scene with the supplied data', () => {
   });
 });
 
-describe('overlay scene with side columns narrowed or hidden', () => {
+describe('overlay scene with side columns switched off', () => {
   const model = normalizeSnapshot(loadSuppliedSnapshot());
   const window = initialTimeWindow(model.asOf, DEFAULT_CHART_CONFIG);
   const full = CurrentChartEngine.create({
@@ -96,7 +95,7 @@ describe('overlay scene with side columns narrowed or hidden', () => {
     now: model.asOf,
     config: DEFAULT_CHART_CONFIG,
   });
-  const sceneFor = (widths: { caution: number; occupancy: number }) => {
+  const sceneFor = (widths: { caution: number; occupancy: number; unusual?: number }) => {
     const theme = withColumnWidths(DEFAULT_CHART_THEME, widths);
     const engine = full.withMargins(theme.margins);
     const scene = buildOverlayScene(engine, model, theme, model.asOf);
@@ -132,49 +131,36 @@ describe('overlay scene with side columns narrowed or hidden', () => {
     expect(ids(groups)).not.toContain('panel-title:occupancy');
   });
 
-  it('keeps only what fits in a narrowed column', () => {
-    const { scene } = sceneFor({ caution: 28, occupancy: 6 + 4 * 20 });
-    // One caution slot is 28 px: rows with two or three icons keep the first.
-    expect(scene.cautions.length).toBeGreaterThan(0);
-    expect(scene.cautions.length).toBeLessThan(18);
-    expect(new Set(scene.cautions.map((c) => c.cx)).size).toBe(1);
-    // Four boxes per row fit: stations with more lines lose the rest.
-    expect(scene.occupancy.length).toBeLessThan(146);
-    const right = scene.columns.occupancy.x + scene.columns.occupancy.width;
-    for (const box of scene.occupancy) expect(box.x + box.width).toBeLessThanOrEqual(right);
-  });
-
   it('clips caution captions so they never run over the line boxes', () => {
-    const { scene, groups } = sceneFor({ caution: 28, occupancy: occupancyColumn });
+    const { scene, groups } = sceneFor({ caution: cautionColumn, occupancy: occupancyColumn });
     const clip = groups.find((g) => g.id === 'caution-items')?.clip;
     expect(clip?.x).toBe(scene.columns.caution.x);
     expect((clip?.x ?? 0) + (clip?.width ?? 0)).toBe(scene.columns.occupancy.x);
   });
 
-  it('draws a splitter on each movable edge, reachable even when the last column is hidden', () => {
-    const { scene, groups, theme } = sceneFor({ caution: 0, occupancy: 0 });
-    const grip = (key: string) => {
-      const item = groups.flatMap((g) => g.items).find((i) => i.id === `splitter-handle:${key}`);
-      if (item?.kind !== 'rect') throw new Error(`no grip for ${key}`);
-      return item;
-    };
-    expect(grip('caution').x + grip('caution').width / 2).toBe(grabX(scene.columns.caution.x, 1800));
-    // At the stage border the handle is nudged 1 px in so it is not cut off.
-    expect(grip('occupancy').x + grip('occupancy').width / 2).toBe(grabX(1800, 1800) - 1);
-    expect(grip('occupancy').x + grip('occupancy').width).toBeLessThanOrEqual(1800);
-    expect(grip('caution').fill).toBe(theme.layout.splitter.handle);
-    // The bar runs the full height and is drawn above the column contents.
-    const bar = groups.at(-1)?.items.find((i) => i.id === 'splitter-bar:caution');
-    expect(bar).toMatchObject({ y: 0, height: 1000, fill: theme.layout.splitter.bar });
+  it('hides the unusual column too, leaving only stations and distances on the right', () => {
+    const { unusualColumn, stationColumn } = DEFAULT_CHART_THEME.layout;
+    const { engine, scene, groups } = sceneFor({ caution: 0, occupancy: 0, unusual: 0 });
+    const { plot } = engine.getChartBounds();
+    expect(plot.width).toBe(
+      full.getChartBounds().plot.width + cautionColumn + occupancyColumn + unusualColumn,
+    );
+    expect(plot.x + plot.width + stationColumn).toBe(1800);
+    expect(scene.columns.unusual.width).toBe(0);
+    expect(scene.unusual).toEqual([]);
+    expect(ids(groups)).not.toContain('panel-title:unusual');
+
+    // Hidden on its own, the other two keep their contents.
+    const only = sceneFor({ caution: cautionColumn, occupancy: occupancyColumn, unusual: 0 });
+    expect(only.scene.cautions).toHaveLength(18);
+    expect(only.scene.occupancy).toHaveLength(146);
+    expect(ids(only.groups)).toContain('panel-title:caution');
   });
 
-  it('highlights the splitter under the pointer', () => {
-    const { scene, engine, theme } = sceneFor({ caution: cautionColumn, occupancy: occupancyColumn });
-    const items = buildInfrastructureLayer(scene, engine, theme, 'occupancy').flatMap((g) => g.items);
-    const fill = (id: string) => items.find((i) => i.id === id && i.kind === 'rect');
-    expect(fill('splitter-handle:occupancy')).toMatchObject({ fill: theme.layout.splitter.activeHandle });
-    expect(fill('splitter-bar:occupancy')).toMatchObject({ fill: theme.layout.splitter.activeBar });
-    expect(fill('splitter-handle:caution')).toMatchObject({ fill: theme.layout.splitter.handle });
+  it('draws no drag handles', () => {
+    const { groups } = sceneFor({ caution: 0, occupancy: 0 });
+    expect(groups.map((g) => g.id)).toEqual(['blocks', 'panels', 'caution-items', 'column-items']);
+    expect(ids(groups).some((id) => id.startsWith('splitter'))).toBe(false);
   });
 
   it('leaves the full-width layout as it was', () => {

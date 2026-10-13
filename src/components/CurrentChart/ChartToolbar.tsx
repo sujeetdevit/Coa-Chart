@@ -37,6 +37,13 @@ const DISPLAY: { key: keyof ChartDisplayOptions; label: string; title: string }[
   },
 ];
 
+/** The side columns that can be switched off to give the chart more room. */
+const COLUMNS: { key: keyof ChartDisplayOptions; label: string; title: string }[] = [
+  { key: 'showCautionColumn', label: 'Caution', title: 'Show the caution column on the right' },
+  { key: 'showLineColumn', label: 'Lines', title: 'Show the line occupancy column on the right' },
+  { key: 'showUnusualColumn', label: 'Unusual', title: 'Show the unusual occurrences column on the right' },
+];
+
 const CATEGORIES: { key: TrainCategory; label: string }[] = [
   { key: 'GOODS', label: 'Goods' },
   { key: 'PASSENGER', label: 'Pass' },
@@ -155,6 +162,21 @@ export function ChartToolbar(props: ChartToolbarProps) {
         >
           S
         </button>
+      </span>
+
+      <span className="toggles side-columns" aria-label="Side columns">
+        {COLUMNS.map(({ key, label, title }) => (
+          <label key={key} title={title}>
+            <input
+              type="checkbox"
+              checked={options[key]}
+              onChange={(e) => {
+                props.onOptionsChange({ ...options, [key]: e.target.checked });
+              }}
+            />
+            {label}
+          </label>
+        ))}
       </span>
     </div>
   );

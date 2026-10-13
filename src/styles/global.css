@@ -203,6 +203,38 @@ body,
   white-space: nowrap;
 }
 
+/* The chart controls always stay on one line: tighter spacing, and on a window too narrow for
+   them the row scrolls sideways instead of wrapping and pushing the chart down. */
+.chart-toolbar {
+  flex-wrap: nowrap;
+  gap: 12px;
+  font-size: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.chart-toolbar > * {
+  flex: none;
+}
+
+.chart-toolbar .toggles {
+  gap: 8px;
+}
+
+.chart-toolbar .toggles label {
+  gap: 3px;
+}
+
+.chart-toolbar input {
+  margin: 0;
+}
+
+/* The show/hide checkboxes for the right-hand columns sit at the right end of the row. */
+.chart-toolbar .side-columns {
+  margin-left: auto;
+}
+
 .forecast-bar {
   border-top: 1px solid #d0d0d0;
   border-bottom: none;

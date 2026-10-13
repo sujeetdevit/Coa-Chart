@@ -240,6 +240,8 @@ export function buildOverlayScene(
     const row = Math.round(y);
     const slot = unusualSlots.get(row) ?? 0;
     unusualSlots.set(row, slot + 1);
+    // A hidden column shows no icons.
+    if (columns.unusual.width <= 0) return;
     const icon = {
       id: `unu:${i}`,
       occurrence,

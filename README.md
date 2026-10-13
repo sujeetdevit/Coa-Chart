@@ -40,10 +40,9 @@ src/current-chart/
 | Drag                                      | Pan                             |
 | Double-click, or **Now**                  | Back to the initial window      |
 
-The **Caution** and **Line** columns on the right can be narrowed or hidden: drag a column's left
-edge (the grey bar with a handle block in the middle) to the right, and drag it back left to show it again. The
-chart widens to use the space. Both columns come back on **Refresh** or a page reload, and the
-printed chart always includes both.
+The **Caution**, **Lines** and **Unusual** checkboxes at the right end of the toolbar show or hide those
+columns on the right. The chart widens to use the space of a hidden column. All three come back
+on **Refresh** or a page reload, and the printed chart always includes them.
 
 Blocks are hatched by the line they are imposed on: lines rising to the right for UP, falling to
 the right for DN, and crossed for both lines. The legend (**L**) repeats this.
