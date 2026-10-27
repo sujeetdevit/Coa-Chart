@@ -4,18 +4,15 @@ import { CurrentChartView } from '../components/CurrentChart/CurrentChartView';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { DataProblems } from '../components/DataProblems';
 import { DiagnosticsPanel } from '../components/DiagnosticsPanel';
-import { createApiSource, createSuppliedSnapshotSource } from '../current-chart/adapters';
+import { createSuppliedSnapshotSource } from '../current-chart/adapters';
 import { createSampleForecastProvider, SampleMsmProvider } from '../current-chart/adapters/samples';
 import { InMemoryEpenStore } from '../current-chart/application/epen';
 import { DEFAULT_CHART_CONFIG } from '../current-chart/configuration/chartConfig';
 import { useChartModel } from '../hooks/useChartModel';
 
 export function App() {
-  // The one place the data source is chosen: the API when VITE_API_BASE_URL is set, else the supplied JSON files.
-  const source = useMemo(() => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-    return apiBaseUrl ? createApiSource(apiBaseUrl) : createSuppliedSnapshotSource();
-  }, []);
+  // The one place the data source is chosen: swap this for an API-backed ChartDataSource.
+  const source = useMemo(() => createSuppliedSnapshotSource(), []);
   // No forecast, MSM or EPEN APIs were supplied: clearly labelled samples / in-memory stand-ins.
   const services = useMemo<ChartServices>(
     () => ({

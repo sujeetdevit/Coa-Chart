@@ -83,7 +83,7 @@ Data reaches the chart through one interface, `ChartDataSource` in
 - Otherwise implement `ChartDataSource.load()` and return the rows per dataset. Validation, the
   adapters and the chart need no change.
 
-Set `VITE_API_BASE_URL` (for example in `.env.local`: `VITE_API_BASE_URL=http://10.77.32.98/chartdemo/api/chart`) to load from the COA chart API; unset, the JSON files in `src/data/` are used. Division, board, user and the time window (hours before and after now) are in `src/current-chart/configuration/apiConfig.ts`; the endpoints and their parameter names are in `src/current-chart/adapters/json/apiSource.ts`. The API answers XML unless asked for JSON, so the source sends `Accept: application/json`.
+No API was supplied, so no endpoint, authentication or session handling is assumed.
 
 ### Assumptions in this phase
 
