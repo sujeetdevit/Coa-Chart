@@ -155,6 +155,6 @@ export const DEFAULT_CHART_CONFIG: ChartConfig = {
   },
   refresh: {
     autoRefreshEnabled: false,
-    intervalSeconds: 180,
+    intervalSeconds: 60,
   },
 };

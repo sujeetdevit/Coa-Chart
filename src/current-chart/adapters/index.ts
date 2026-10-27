@@ -8,6 +8,7 @@ export {
 } from './types';
 export { JsonFileDataSource, type SnapshotUrls } from './json/JsonFileDataSource';
 export { createSuppliedSnapshotSource } from './json/suppliedSnapshot';
+export { createApiSource, apiSnapshotUrls, formatApiDateTime } from './json/apiSource';
 export { parseCoaDateTime, formatCoaDateTime } from './shared/coaDateTime';
 export { validateRows, type ValidatedRows } from './shared/validateRows';
 export { normalizeSnapshot, type NormalizeOptions } from './normalize/normalizeSnapshot';
